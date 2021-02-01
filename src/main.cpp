@@ -31,14 +31,14 @@ boolean SensorKey = LOW;                 //Переменная для хран�
 void callback(char* topic, byte* payload, unsigned int length);
 
 // Утановить IP адресс для этой Arduino (должен быть уникальным в вашей сети)
-IPAddress ip(172, 16, 6, 201);
+IPAddress ip(172, 20, 20, 195);
 
 byte mac[] = {
   0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02
 };
 
 // Уставновить IP адресс MQTT брокера
-byte server[] = { 172, 16, 6, 40 };
+byte server[] = { 172, 20, 20, 125 };
 
 // Уставновить Логин и Пароль для подключения к MQTT брокеру
 const char* mqtt_username = "corvin";
@@ -115,24 +115,31 @@ void setup() {
 
 void loop() {
   client.loop();
+  // if ( !ds.search(addr)) {
+  //   Serial.println("No more addresses.");
+  //   Serial.println();
+  //   ds.reset_search();
+  //   delay(250);
+  //   return;
+  // }
   ds.reset();
   ds.select(addr);
   ds.write(0x44, 1);
-  delay(500);
+  delay(750);
   present = ds.reset();
   ds.select(addr);
   ds.write(0xBE);         // Read Scratchpad
-  Serial.print("  Data = ");
-  Serial.print(present, HEX);
-  Serial.print(" ");
+  // Serial.print("  Data = ");
+  // Serial.print(present, HEX);
+  // Serial.print(" ");
   for ( i = 0; i < 9; i++) {           // we need 9 bytes
-    data[i] = ds.read();
-    Serial.print(data[i], HEX);
-    Serial.print(" ");
+     data[i] = ds.read();
+     // Serial.print(data[i], HEX);
+  //   Serial.print(" ");
   }
-  Serial.print(" CRC=");
-  Serial.print(OneWire::crc8(data, 8), HEX);
-  Serial.println();
+  // Serial.print(" CRC=");
+  // Serial.print(OneWire::crc8(data, 8), HEX);
+  // Serial.println();
 
   // Convert the data to actual temperature
   // because the result is a 16 bit signed integer, it should
@@ -148,6 +155,9 @@ void loop() {
   //// default is 12 bit resolution, 750 ms conversion time
 
   celsius = (float)raw / 16.0;
+  Serial.print("  Temperature = ");
+  Serial.print(celsius);
+  Serial.println(" Celsius, ");
 
   if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 0 ) ) { // Если кнопка нажата
     digitalWrite(LED_PIN, HIGH);// зажигаем светодиод
