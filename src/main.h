@@ -15,7 +15,7 @@
 #include <SPI.h>
 #include <Ethernet2.h>
 #include <PubSubClient.h>
-#include <OneWire.h>
+// #include <OneWire.h>
 // #include <Wire.h>
 /**************************************************************/
 /* Настройка дополнительных параметров: отладка, сеть, etc... */
@@ -35,7 +35,7 @@
 #define DEVICE_NAME "TermostatOnArduino"
 
 // Для DS18B20
-#define ONEWIRE_BUS 2				// Номер пина Arduino с подключенным датчиком
+// #define ONEWIRE_BUS 2				// Номер пина Arduino с подключенным датчиком
 #define TEMP1_UPDATE_TIME 12000		// Определяем периодичность проверок
 #define TEMP2_UPDATE_TIME 10000		// Определяем периодичность проверок
 #define SEND_UPDATE_TIME 120000		// Определяем периодичность отправки через RS485
@@ -87,7 +87,7 @@ float ds18b20ReadScratchpad(byte ds18b20Addr[8]);
 
 boolean ColdStart = 1;
 
-OneWire  ds(ONEWIRE_BUS);  // on pin 10 (a 4.7K resistor is necessary)
+// OneWire  ds(ONEWIRE_BUS);  // on pin 10 (a 4.7K resistor is necessary)
 byte ds18b20Data[12];
 //byte ds18b20Addr[8];
 uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };

@@ -1,4 +1,6 @@
 #include "main.h"
+#include "ds18b20.h"
+Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
 
 void setup() {
   initializeThePeriphery();
@@ -6,8 +8,9 @@ void setup() {
   initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
   //initDS18B20();
-  ds18b20StartConversion(ds18b20Sensor1);
-  ds18b20StartConversion(ds18b20Sensor2);
+  // ds18b20StartConversion(ds18b20Sensor1);
+  // ds18b20StartConversion(ds18b20Sensor2);
+  mySensor1.startConversion();
 }
 
 void loop() {
@@ -15,7 +18,10 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousUpdateTime1 > TEMP1_UPDATE_TIME) {
     previousUpdateTime1 = currentMillis;
-    ds18b20TemperatureSensor1 = ds18b20ReadScratchpad(ds18b20Sensor1);
+    mySensor1.readScratchpad();
+    mySensor1.startConversion();
+    ds18b20TemperatureSensor1 = mySensor1.currentTemperature;
+    //ds18b20TemperatureSensor1 = ds18b20ReadScratchpad(ds18b20Sensor1);
     #ifdef DEBUG
       Serial.print(F("ds18b20TemperatureSensor1 = "));
       Serial.print(ds18b20TemperatureSensor1);
@@ -27,7 +33,7 @@ void loop() {
   }
   if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
     previousUpdateTime2 = currentMillis;
-    ds18b20TemperatureSensor2 = ds18b20ReadScratchpad(ds18b20Sensor2);
+    // ds18b20TemperatureSensor2 = ds18b20ReadScratchpad(ds18b20Sensor2);
     #ifdef DEBUG
       Serial.print(F("ds18b20TemperatureSensor2 = "));
       Serial.print(ds18b20TemperatureSensor2);
@@ -171,8 +177,7 @@ void ds18b20StartConversion(byte ds18b20Addr[8]){
  * Считываем с датчиков DS18B20 текущую информацию
  */
 float ds18b20ReadScratchpad(byte ds18b20Addr[8]){
-  // present = ds.reset();   // Не понял, зачем present
-  ds.reset();   // Не понял, зачем present
+  ds.reset();
   ds.select(ds18b20Addr);
   ds.write(0xBE);         // Read Scratchpad
 
