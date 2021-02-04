@@ -1,177 +1,201 @@
-#include <Arduino.h>
-#include <SPI.h>
-#include <Ethernet2.h>
-#include <PubSubClient.h>
-#include <OneWire.h>
-
-#define LED_PIN 9
-#define BUTTON_PIN 4
-// -------------------------------------- BEGIN - Пины Arduino ----------------------------------------------
-#define LED_pin 6                         //Пин 5 для светодиодов
-#define Relay1_pin 7                      //Пин 6 для реле 1
-#define Relay2_pin 8                      //Пин 7 для реле 2
-// -------------------------------------- END - Пины Arduino ------------------------------------------------
-
-OneWire  ds(2);  // on pin 10 (a 4.7K resistor is necessary)
-byte data[12];
-byte addr[8];
-float celsius;
-byte present = 0;
-byte i;
-
-byte ledState = 0;
-// -------------------------------------- BEGIN - Глобальные переменные -------------------------------------
-byte Led = 0;                             //Переменная для хранения состояния светодиода
-boolean Relay1 = HIGH;                    //Переменная для хранения состояния Реле 1
-boolean Relay2 = HIGH;                    //Переменная для хранения состояния Реле 2
-boolean SensorKey = LOW;                 //Переменная для хранения состояния сенсорной кнопки
-// -------------------------------------- END - Глобальные переменные ---------------------------------------
-
-
-void callback(char* topic, byte* payload, unsigned int length);
-
-// Утановить IP адресс для этой Arduino (должен быть уникальным в вашей сети)
-IPAddress ip(172, 20, 20, 195);
-
-byte mac[] = {
-  0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02
-};
-
-// Уставновить IP адресс MQTT брокера
-byte server[] = { 172, 20, 20, 125 };
-
-// Уставновить Логин и Пароль для подключения к MQTT брокеру
-const char* mqtt_username = "corvin";
-const char* mqtt_password = "eTx1243";
-
-EthernetClient ethClient;
-PubSubClient client(server, 1883, callback, ethClient);
-
-// --------------------------------------- BEGIN - Подключение и подписка на MQTT broker ----------------------------------
-boolean reconnect() {
-  //Serial.println("reconnect...");
-  if (client.connect("Arduino_test", mqtt_username, mqtt_password)) {
-    client.publish("/countryhouse/led_in", "0");
-    client.publish("/countryhouse/relay1in", "1");
-    client.publish("/countryhouse/relay2in", "1");
-    client.publish("/TestMQTT/in", "OFF");
-    client.subscribe("/countryhouse/led"); Serial.println("Connected to: /countryhouse/led");
-    client.subscribe("/countryhouse/relay1"); Serial.println("Connected to: /countryhouse/relay1");
-    client.subscribe("/countryhouse/relay2"); Serial.println("Connected to: /countryhouse/relay2");
-    client.subscribe("/TestMQTT/out"); Serial.println("Connected to: /TestMQTT/out");
-//    Serial.println("MQTT connected");
-  }
-  return client.connected();
-}
-// --------------------------------------- END - Подключение и подписка на MQTT broker ----------------------------------
-
-
-//EthernetClient client;
+#include "main.h"
 
 void setup() {
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(BUTTON_PIN, INPUT);
-  // digitalWrite(LED_PIN, HIGH); // Решение проблемы с LOW статусом пинов при загрузке ардуино
-
-  digitalWrite(Relay1_pin, HIGH); // Решение проблемы с LOW статусом пинов при загрузке ардуино
-  digitalWrite(Relay2_pin, HIGH); // Решение проблемы с LOW статусом пинов при загрузке ардуино
-  pinMode(LED_pin, OUTPUT);
-  pinMode(Relay1_pin, OUTPUT);
-  pinMode(Relay2_pin, OUTPUT);
-
-  Serial.begin(9600); // Open serial communications
-
-  // Start with a hard-coded address:
-//  Ethernet.begin(mac, ip);
-
-//  Serial.print("My ip address: ");
-//  Serial.println(Ethernet.localIP());
-
-  if (Ethernet.begin(mac) == 0) {
-    for (;;){
-      digitalWrite(LED_PIN, HIGH);
-      delay(500);
-      digitalWrite(LED_PIN, LOW);
-      delay(500);
-    }
-  }
-  digitalWrite(LED_PIN, HIGH);
-  delay(500);
-  digitalWrite(LED_PIN, LOW);
-  delay(500);
-  digitalWrite(LED_PIN, HIGH);
-  delay(500);
-  digitalWrite(LED_PIN, LOW);
-  delay(500);
+  initializeThePeriphery();
+  initSerial();
+  initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
-  if ( !ds.search(addr)) {
-    Serial.println("No more addresses.");
-    Serial.println();
-    ds.reset_search();
-    delay(250);
-    return;
-  }
+  //initDS18B20();
+  ds18b20StartConversion(ds18b20Sensor1);
+  ds18b20StartConversion(ds18b20Sensor2);
 }
 
 void loop() {
   client.loop();
-  // if ( !ds.search(addr)) {
-  //   Serial.println("No more addresses.");
-  //   Serial.println();
-  //   ds.reset_search();
-  //   delay(250);
-  //   return;
-  // }
-  ds.reset();
-  ds.select(addr);
-  ds.write(0x44, 1);
-  delay(750);
-  present = ds.reset();
-  ds.select(addr);
-  ds.write(0xBE);         // Read Scratchpad
-  // Serial.print("  Data = ");
-  // Serial.print(present, HEX);
-  // Serial.print(" ");
-  for ( i = 0; i < 9; i++) {           // we need 9 bytes
-     data[i] = ds.read();
-     // Serial.print(data[i], HEX);
-  //   Serial.print(" ");
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousUpdateTime1 > TEMP1_UPDATE_TIME) {
+    previousUpdateTime1 = currentMillis;
+    ds18b20TemperatureSensor1 = ds18b20ReadScratchpad(ds18b20Sensor1);
+    #ifdef DEBUG
+      Serial.print(F("ds18b20TemperatureSensor1 = "));
+      Serial.print(ds18b20TemperatureSensor1);
+      Serial.println(" °C");
+    #endif
+    char dataTempChar[5];
+    dtostrf(ds18b20TemperatureSensor1, 5, 2, dataTempChar);
+    client.publish("/countryhouse/ds18b20_1", dataTempChar);
   }
-  // Serial.print(" CRC=");
-  // Serial.print(OneWire::crc8(data, 8), HEX);
-  // Serial.println();
+  if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
+    previousUpdateTime2 = currentMillis;
+    ds18b20TemperatureSensor2 = ds18b20ReadScratchpad(ds18b20Sensor2);
+    #ifdef DEBUG
+      Serial.print(F("ds18b20TemperatureSensor2 = "));
+      Serial.print(ds18b20TemperatureSensor2);
+      Serial.println(" °C");
+    #endif
+    char dataTempChar[5];
+    dtostrf(ds18b20TemperatureSensor2, 5, 2, dataTempChar);
+    client.publish("/countryhouse/ds18b20_2", dataTempChar);
+  }
 
-  // Convert the data to actual temperature
-  // because the result is a 16 bit signed integer, it should
-  // be stored to an "int16_t" type, which is always 16 bits
-  // even when compiled on a 32 bit processor.
-  int16_t raw = (data[1] << 8) | data[0];
+  if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 0 ) ) { // Если кнопка нажата
+    digitalWrite(LED_PIN, HIGH);// зажигаем светодиод
+    client.publish("/countryhouse/sensor_key", "ON");
+    ledState = 1;
+    delay(500);
+  }
+  if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 1 ) ) { // Если кнопка нажата
+    digitalWrite(LED_PIN, LOW);// зажигаем светодиод
+    client.publish("/countryhouse/sensor_key", "OFF");
+    ledState = 0;
+    delay(500);
+  }
+}
 
-  byte cfg = (data[4] & 0x60);
+/*
+ * Инициализируем работу портов
+ */
+void initializeThePeriphery(){
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_STRIP, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT);
+  digitalWrite(RELAY1_PIN, HIGH);
+  digitalWrite(RELAY2_PIN, HIGH);
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+}
+
+/*
+ * Инициализируем работу по шине UART на скорости 9600 бит/сек.
+ */
+ void initSerial(void)
+ {
+   /*
+    * Инициируем передачу данных по шине UART на скорости 9600 бит/сек.
+    */
+   Serial.begin(9600);
+   while (!Serial) {
+     delay(100); // hang out until serial port opens
+   }
+ }
+/*############################## End initSerial ##############################*/
+
+/*
+ * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
+ * Ethernet2, если использовать EthernetShield W5100 надо применять библиотеку
+ * Ethernet
+ */
+void initNetwork(void)
+{
+  #ifdef DEBUG
+    Serial.println(F("Start ethernet..."));
+  #endif
+
+  #ifdef GET_DHCP
+    if (Ethernet.begin(mac) == 0) {
+      Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
+      for (;;){
+        digitalWrite(LED_PIN, HIGH);
+        delay(250);
+        digitalWrite(LED_PIN, LOW);
+        delay(250);
+      }
+    }
+    digitalWrite(LED_PIN, HIGH);
+    delay(150);
+    digitalWrite(LED_PIN, LOW);
+    delay(150);
+    // Выводим в консоль адрес присвоеный интерфейсу
+    Serial.print(F("My DHCP IP address: "));
+  #else
+    if (Ethernet.begin(mac,ip) == 0) {
+      Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
+      for (;;){
+        digitalWrite(LED_PIN, HIGH);
+        delay(250);
+        digitalWrite(LED_PIN, LOW);
+        delay(250);
+      }
+    }
+    // Выводим в консоль адрес присвоеный интерфейсу
+    Serial.print(F("My static IP address: "));
+    digitalWrite(LED_PIN, HIGH);
+    delay(150);
+    digitalWrite(LED_PIN, LOW);
+    delay(150);
+  #endif
+
+  for (byte thisByte = 0; thisByte < 4; thisByte++) {
+    // print the value of each byte of the IP address:
+    if (thisByte != 3) {
+      Serial.print(Ethernet.localIP()[thisByte], DEC);
+      Serial.print(".");
+    } else {
+      Serial.println(Ethernet.localIP()[thisByte], DEC);
+    }
+
+  }
+}
+/*############################# End initNetwork ##############################*/
+
+/*
+ * Инициируем работу с датчиком DS18B20
+ */
+void initDS18B20(void){
+  Serial.print("ROM sensor1 =");
+  for( byte i = 0; i < 8; i++) {
+    Serial.write(' ');
+    Serial.print(ds18b20Sensor1[i], HEX);
+  }
+  Serial.println();
+  Serial.print("ROM sensor2 =");
+  for( byte i = 0; i < 8; i++) {
+    Serial.write(' ');
+    Serial.print(ds18b20Sensor2[i], HEX);
+  }
+  Serial.println();
+}
+/*############################# End initDS18B20 ##############################*/
+
+/*
+ * Инициируем опрос датчиков DS18B20 с целью запуска преобразования температуры
+ */
+void ds18b20StartConversion(byte ds18b20Addr[8]){
+  ds.reset();
+  ds.select(ds18b20Addr);
+  ds.write(0x44, 1);
+}
+/*######################## End ds18b20StartConversion ########################*/
+
+/*
+ * Считываем с датчиков DS18B20 текущую информацию
+ */
+float ds18b20ReadScratchpad(byte ds18b20Addr[8]){
+  // present = ds.reset();   // Не понял, зачем present
+  ds.reset();   // Не понял, зачем present
+  ds.select(ds18b20Addr);
+  ds.write(0xBE);         // Read Scratchpad
+
+  for ( byte i = 0; i < 9; i++) {           // we need 9 bytes
+    ds18b20Data[i] = ds.read();
+    Serial.print(ds18b20Data[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.print(" - ");
+  int16_t raw = (ds18b20Data[1] << 8) | ds18b20Data[0];
+
+  byte cfg = (ds18b20Data[4] & 0x60);
   // at lower res, the low bits are undefined, so let's zero them
   if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
   else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
   else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
   //// default is 12 bit resolution, 750 ms conversion time
 
-  celsius = (float)raw / 16.0;
-  Serial.print("  Temperature = ");
-  Serial.print(celsius);
-  Serial.println(" Celsius, ");
-
-  if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 0 ) ) { // Если кнопка нажата
-    digitalWrite(LED_PIN, HIGH);// зажигаем светодиод
-    client.publish("/TestMQTT/in", "ON");
-    ledState = 1;
-    delay(500);
-  }
-  if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 1 ) ) { // Если кнопка нажата
-    digitalWrite(LED_PIN, LOW);// зажигаем светодиод
-    client.publish("/TestMQTT/in", "OFF");
-    ledState = 0;
-    delay(500);
-  }
+  float ds18b20Temperature = (float)raw / 16.0;
+  ds18b20StartConversion(ds18b20Addr);
+  return ds18b20Temperature;
 }
+/*######################## End ds18b20ReadScratchpad #########################*/
 
 // --------------------------------------- BEGIN - void callback ------------------------------------------
 // Чтение данных из MQTT брокера
@@ -186,29 +210,38 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (String(topic) == "/countryhouse/led") {
     String value = String((char*)payload);
     Led = value.substring(0, value.indexOf(';')).toInt();
-    Led = map(Led, 0, 100, 0, 255);
-    analogWrite(LED_pin, Led);
+    byte ledToPWM = map(Led, 0, 100, 0, 255);
+    analogWrite(LED_STRIP, ledToPWM);
     Serial.print("Znachenie prisvoenoe peremennoy Led: ");
     Serial.println(Led);
+    char dataTempChar[5];
+    if (Led < 10) {
+      dtostrf(Led, 1, 0, dataTempChar);
+    } else if ((Led > 9) && (Led < 100)) {
+      dtostrf(Led, 2, 0, dataTempChar);
+    } else {
+      dtostrf(Led, 3, 0, dataTempChar);
+    }
+    client.publish("/countryhouse/led_in", dataTempChar);
   }
 
   if (String(topic) == "/countryhouse/relay1") {
-    String value = String((char*)payload);
-    Relay1 = value.substring(0, value.indexOf(';')).toInt();
-    Serial.print("Znachenie prisvoenoe peremennoy Relay1: ");
-    Serial.println(Relay1);
-    digitalWrite(Relay1_pin, Relay1);
+    if (strPayload == "ON"){
+      digitalWrite(RELAY1_PIN, LOW);
+    } else if (strPayload == "OFF"){
+      digitalWrite(RELAY1_PIN, HIGH);
+    }
   }
 
   if (String(topic) == "/countryhouse/relay2") {
-    String value = String((char*)payload);
-    Relay2 = value.substring(0, value.indexOf(';')).toInt();
-    Serial.print("Znachenie prisvoenoe peremennoy Relay2: ");
-    Serial.println(Relay2);
-    digitalWrite(Relay2_pin, Relay2);
+    if (strPayload == "ON"){
+      digitalWrite(RELAY2_PIN, LOW);
+    } else if (strPayload == "OFF"){
+      digitalWrite(RELAY2_PIN, HIGH);
+    }
   }
 
-  if (String(topic) == "/TestMQTT/out") {
+  if (String(topic) == "/countryhouse/sensor_key") {
     if (strPayload == "OFF"){
       digitalWrite(LED_PIN, LOW);
       ledState = 0;
@@ -226,3 +259,43 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 }
 // ---------------------------------------- END - void callback -------------------------------------------
+// --------------------------------------- BEGIN - Подключение и подписка на MQTT broker ----------------------------------
+
+/*
+ * Подключение к брокеру MQTT, подписка на топики и начальная инициализация состояний
+ * реле, выключателей и т.д.
+ */
+boolean reconnect(void) {
+  #ifdef DEBUG
+    Serial.println(F("reconnect..."));
+  #endif
+  if (client.connect(DEVICE_NAME, mqtt_username, mqtt_password)) {
+    //TODO Настроить загрузку начальных значений из EEPROM
+    if (ColdStart) {
+      client.publish("/countryhouse/led_in", "0");
+      client.publish("/countryhouse/relay1in", "OFF");
+      client.publish("/countryhouse/relay2in", "OFF");
+      client.publish("/countryhouse/sensor_key", "OFF");
+      ColdStart = 0;
+      // digitalWrite(LED_PIN, HIGH);
+    }
+    client.subscribe("/countryhouse/led");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/led"));
+    #endif
+    client.subscribe("/countryhouse/relay1");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/relay1"));
+    #endif
+    client.subscribe("/countryhouse/relay2");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/relay2"));
+    #endif
+    client.subscribe("/countryhouse/sensor_key");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/sensor_key"));
+    #endif
+  }
+  return client.connected();
+}
+// --------------------------------------- END - Подключение и подписка на MQTT broker ----------------------------------
