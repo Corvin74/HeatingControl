@@ -36,8 +36,8 @@
 
 // Для DS18B20
 // #define ONEWIRE_BUS 2				// Номер пина Arduino с подключенным датчиком
-#define TEMP1_UPDATE_TIME 12000		// Определяем периодичность проверок
-#define TEMP2_UPDATE_TIME 10000		// Определяем периодичность проверок
+#define TEMP1_UPDATE_TIME 10000		// Определяем периодичность проверок
+#define TEMP2_UPDATE_TIME 12000		// Определяем периодичность проверок
 #define SEND_UPDATE_TIME 120000		// Определяем периодичность отправки через RS485
 
 // Для RS485

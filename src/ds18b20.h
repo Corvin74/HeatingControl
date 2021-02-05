@@ -8,7 +8,7 @@ OneWire  ds(ONEWIRE_BUS);
 // описание класса
 class Ds18b20 {
 public:
-  Ds18b20(uint8_t *sensorAddress, byte length, long updateInterval = 10000);
+  Ds18b20(uint8_t *sensorAddress, byte length, long updateInterval);
   void setSensorAddress(uint8_t *address, byte length);
   void setUpdateInterval(long updateInterval);
   uint8_t getSensorAddress();

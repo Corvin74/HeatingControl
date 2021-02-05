@@ -1,16 +1,15 @@
 #include "main.h"
 #include "ds18b20.h"
 Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
+Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 10000);
 
 void setup() {
   initializeThePeriphery();
   initSerial();
   initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
-  //initDS18B20();
-  // ds18b20StartConversion(ds18b20Sensor1);
-  // ds18b20StartConversion(ds18b20Sensor2);
   mySensor1.startConversion();
+  mySensor2.startConversion();
 }
 
 void loop() {
@@ -21,9 +20,8 @@ void loop() {
     mySensor1.readScratchpad();
     mySensor1.startConversion();
     ds18b20TemperatureSensor1 = mySensor1.currentTemperature;
-    //ds18b20TemperatureSensor1 = ds18b20ReadScratchpad(ds18b20Sensor1);
     #ifdef DEBUG
-      Serial.print(F("ds18b20TemperatureSensor1 = "));
+      Serial.print(F("Sensor1 = "));
       Serial.print(ds18b20TemperatureSensor1);
       Serial.println(" °C");
     #endif
@@ -33,14 +31,16 @@ void loop() {
   }
   if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
     previousUpdateTime2 = currentMillis;
-    // ds18b20TemperatureSensor2 = ds18b20ReadScratchpad(ds18b20Sensor2);
+    mySensor2.readScratchpad();
+    mySensor2.startConversion();
+    // ds18b20TemperatureSensor2 = mySensor2.currentTemperature;
     #ifdef DEBUG
-      Serial.print(F("ds18b20TemperatureSensor2 = "));
-      Serial.print(ds18b20TemperatureSensor2);
+      Serial.print(F("Sensor2 = "));
+      Serial.print(mySensor2.currentTemperature);
       Serial.println(" °C");
     #endif
     char dataTempChar[5];
-    dtostrf(ds18b20TemperatureSensor2, 5, 2, dataTempChar);
+    dtostrf(mySensor2.currentTemperature, 5, 2, dataTempChar);
     client.publish("/countryhouse/ds18b20_2", dataTempChar);
   }
 
