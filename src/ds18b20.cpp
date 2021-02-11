@@ -1,4 +1,5 @@
 #include "ds18b20.h"
+
 OneWire  ds(ONEWIRE_BUS);
 
 Ds18b20::Ds18b20(uint8_t *sensorAddress, byte length, long updateInterval = 10000) {
@@ -48,6 +49,6 @@ void Ds18b20::readScratchpad(){
     else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
     //// default is 12 bit resolution, 750 ms conversion time
 
-    currentTemperature = (float)raw / 16.0;
+    Ds18b20::currentTemperature = (float)raw / 16.0;
   }
 }

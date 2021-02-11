@@ -13,80 +13,48 @@
 #include <Ethernet2.h>
 #include <PubSubClient.h>
 #include "ds18b20.h"
-
-// #include <LiquidCrystal_I2C.h>
-// #include <DallasTemperature.h>
-// #include <EEPROM.h>
-// #include <Wire.h>
-/******************************************************************************/
-
 /**************************************************************/
 /* Настройка дополнительных параметров: отладка, сеть, etc... */
 /**************************************************************/
+
 // При отладке компилировать с диагностическими сообщениями
 #ifndef DEBUG
   #define DEBUG
 #endif
+
 // Для инициализации IP адреса по DHCP
 #ifndef DHCP
   #define GET_DHCP
 #endif
+
 // Название устройства при подключении к MQTT
 #define DEVICE_NAME "TermostatOnArduino"
-// Интервалы опроса датчиков
-#define TEMP1_UPDATE_TIME 10000
-#define TEMP2_UPDATE_TIME 12000
-// Интервал отправки данных на базовый блок по интерфейсу RS485
-#define SEND_UPDATE_TIME 120000
-// Для настройки интерфейса RS485
-// Указываем номер вывода arduino, к которому подключены выводы RE и DE
-// конвертирующего модуля
-#define SerialTxControl 11
-// Режим передачи
-#define RS485Transmit    HIGH
-// Режим приема
-#define RS485Receive     LOW
 
-/******************************************************************************/
-
-/******************************************************************************/
-/*************************************************************)**/
-/* Создание необходимых объектов, объявление переменных, etc... */
-/****************************************************************/
 // Для DS18B20
-// Адрес первого датчика
-uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
-// Адрес второго датчика
-uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
+#define TEMP1_UPDATE_TIME 10000		// Определяем периодичность проверок
+#define TEMP2_UPDATE_TIME 12000		// Определяем периодичность проверок
+#define TEMP3_UPDATE_TIME 14000		// Определяем периодичность проверок
+/******************************************************************************/
 
-float ds18b20TemperatureSensor1;
-float ds18b20TemperatureSensor2;
-
-Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 10000);
-Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 12000);
-
-
-
-char buffer[100];					// Буфер приема информации через RS485
-
-#define LED_PIN 9
-#define BUTTON_PIN 4
-
-// -------------------------------------- BEGIN - Пины Arduino ----------------------------------------------
-#define LED_STRIP 6                         //Пин 6 для светодиодов
-#define RELAY1_PIN 7                      //Пин 6 для реле 1
-#define RELAY2_PIN 8                      //Пин 7 для реле 2
+#define LED_PIN 9                 // Пин 9 с подключенным контрольным светодиодом
+#define RELAY1_PIN 7              // Пин 7 для реле 1
+#define RELAY2_PIN 8              // Пин 8 для реле 2
 // -------------------------------------- END - Пины Arduino ------------------------------------------------
-void callback(char* topic, byte* payload, unsigned int length);
-boolean reconnect(void);
 
-/**
-  * Инициируем всю необходимую переферию
-  */
+/***************************************************************/
+/*          Описание функций используемых в программе          */
+/***************************************************************/
+/*
+ * Инициализируем работу портов
+ */
+void initializeVariables(void);
+/*
+ * Инициируем всю необходимую переферию
+ */
 void initializeThePeriphery(void);
-/**
-  * Инициируем передачу данных по шине UART на скорости 9600 бит/сек.
-  */
+/*
+ * Инициируем передачу данных по шине UART на скорости 9600 бит/сек.
+ */
 void initSerial(void);
 /*
  * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
@@ -94,42 +62,36 @@ void initSerial(void);
  * Ethernet
  */
 void initNetwork(void);
-
-<<<<<<< HEAD
 /*
- * Инициируем работу с датчиком DS18B20
+ * Колбэк функция для работы с MQTT-брокером
  */
-void initDS18B20(void);
+void callback(char* topic, byte* payload, unsigned int length);
 /*
- * Инициируем опрос датчиков DS18B20 с целью запуска преобразования температуры
+ * Функция для подключения к MQTT-брокеру
  */
-void ds18b20StartConversion(byte ds18b20Addr[8]);
+boolean reconnect(void);
 /*
- * Считываем с датчиков DS18B20 текущую информацию
+ * Среднее значение температуры в доме
  */
-float ds18b20ReadScratchpad(byte ds18b20Addr[8]);
-
 void calcAvarage(float sensor1, float sensor2);
 
-boolean ColdStart = 1;
-
-// OneWire  ds(ONEWIRE_BUS);  // on pin 10 (a 4.7K resistor is necessary)
-byte ds18b20Data[12];
-//byte ds18b20Addr[8];
+/****************************************************************/
+/*         Описание переменных используемых в программе         */
+/****************************************************************/
+// Признак первого запуска
+uint8_t coldStart = 1;
+// Адреса датчиков используемых в проекте
 uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
 uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
-
-float ds18b20TemperatureSensor1 = -200.0;
-float ds18b20TemperatureSensor2 = -200.0;
-=======
-boolean ColdStart = 1;
-
->>>>>>> 12068780623290a60ffa32b11c8f3cf5a6a56ce9
-
-// Переменная для хранения времени последней отправки данных
-long previousUpdateTime1 = 0;
-long previousUpdateTime2 = 0;
-//long previousUpdateTime = 0;
+uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
+// Текущие данные с датчиков температуры
+float dsSensor1 = -200.0;
+float dsSensor2 = -200.0;
+float dsSensor3 = -200.0;
+// Переменные для хранения времени последнего обновления данных
+long previousUpdateTime1;
+long previousUpdateTime2;
+long previousUpdateTime3;
 
 byte ledState = 0;
 
@@ -165,36 +127,4 @@ const char* mqtt_password = "eTx1243";
 
 EthernetClient ethClient;
 PubSubClient client(server, 1883, callback, ethClient);
-
-//EthernetClient client;
-
-
-// void printAddress(DeviceAddress deviceAddress);
-// void printTemperature(DeviceAddress deviceAddress);
-// void printResolution(DeviceAddress deviceAddress);
-// void printData(DeviceAddress deviceAddress);
-// float getTemperature(DeviceAddress deviceAddress);
-
-// struct Message {
-// 	byte DeviceID;		// ID устройства, может принимать значения 1-254
-// 	byte DestinationID;	// Номер устройства-получателя, может принимать значения 0-254
-// 						// (0 - броадкаст)
-// 	uint8_t PacketID;	// Идентификатор пакета.
-// 	byte ActuatorID;	// ID исполнительного устройства, может принимать значения 1-254
-// 	byte CommandID;		// Название параметра (feedTemperature, returnTemperature, relayState...)
-// 	int DataValue;		// Значение параметра типа int
-// };
-//
-// uint8_t stateWork = 0b00000000; // Битовое поле статусов задач
-/*
- *	0 - отправлен запрос на измерение температуры (0-нет, 1-да)
- *	1 - считана температура с датчика после последнего запроса (0-нет, 1-да)
- *	2 - статус первого тена (0-выключен, 1-включен)
- *	3 - статус второго тена (0-выключен, 1-включен)
- *	4 - статус третьего тена (0-выключен, 1-включен)
- *	5 - режим работы
- *	6 - режим работы
- *	7 - изменение температуры более чем на 1 градус
- */
-
 #endif /* MAIN_H_ */
