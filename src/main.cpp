@@ -4,6 +4,12 @@ Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
 Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 10000);
 
 void setup() {
+  heatingControl.curentAverageTemperature = 0.0;
+  heatingControl.heatingState = 0;
+  heatingControl.targetTemperature = 0.0;
+  heatingControl.targetTemperatureHiden = 0.0;
+  heatingControl.heatingCommand = 0;
+
   initializeThePeriphery();
   initSerial();
   initNetwork();
@@ -13,6 +19,7 @@ void setup() {
 }
 
 void loop() {
+  char dataTempChar[5];
   client.loop();
   unsigned long currentMillis = millis();
   if (currentMillis - previousUpdateTime1 > TEMP1_UPDATE_TIME) {
@@ -25,25 +32,25 @@ void loop() {
       Serial.print(ds18b20TemperatureSensor1);
       Serial.println(" °C");
     #endif
-    char dataTempChar[5];
+    // char dataTempChar[5];
     dtostrf(ds18b20TemperatureSensor1, 5, 2, dataTempChar);
     client.publish("/countryhouse/ds18b20_1", dataTempChar);
+    calcAvarage(ds18b20TemperatureSensor1, ds18b20TemperatureSensor2);
   }
   if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
     previousUpdateTime2 = currentMillis;
     mySensor2.readScratchpad();
     mySensor2.startConversion();
-    // ds18b20TemperatureSensor2 = mySensor2.currentTemperature;
+    ds18b20TemperatureSensor2 = mySensor2.currentTemperature;
     #ifdef DEBUG
       Serial.print(F("Sensor2 = "));
-      Serial.print(mySensor2.currentTemperature);
+      Serial.print(ds18b20TemperatureSensor2);
       Serial.println(" °C");
     #endif
-    char dataTempChar[5];
-    dtostrf(mySensor2.currentTemperature, 5, 2, dataTempChar);
+    dtostrf(ds18b20TemperatureSensor2, 5, 2, dataTempChar);
     client.publish("/countryhouse/ds18b20_2", dataTempChar);
+    calcAvarage(ds18b20TemperatureSensor1, ds18b20TemperatureSensor2);
   }
-
   if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 0 ) ) { // Если кнопка нажата
     digitalWrite(LED_PIN, HIGH);// зажигаем светодиод
     client.publish("/countryhouse/sensor_key", "ON");
@@ -202,6 +209,21 @@ float ds18b20ReadScratchpad(byte ds18b20Addr[8]){
 }
 /*######################## End ds18b20ReadScratchpad #########################*/
 
+void calcAvarage(float sensor1, float sensor2) {
+  char dataTempChar[5];
+  if ((sensor1 > -200) && (sensor2 > -200)) {
+    float tmp = 0.0;
+    tmp = (ds18b20TemperatureSensor1 + ds18b20TemperatureSensor2) / 2;
+    heatingControl.curentAverageTemperature = tmp;
+    dtostrf(tmp, 5, 2, dataTempChar);
+    #ifdef DEBUG
+      Serial.print(F("Average temperature = "));
+      Serial.print(dataTempChar);
+      Serial.println(" °C");
+    #endif
+    client.publish("/countryhouse/heating/curentTemperature", dataTempChar);
+  }
+}
 // --------------------------------------- BEGIN - void callback ------------------------------------------
 // Чтение данных из MQTT брокера
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -281,6 +303,7 @@ boolean reconnect(void) {
       client.publish("/countryhouse/relay1in", "OFF");
       client.publish("/countryhouse/relay2in", "OFF");
       client.publish("/countryhouse/sensor_key", "OFF");
+      client.publish("/countryhouse/heating/curentTemperature", "0");
       ColdStart = 0;
       // digitalWrite(LED_PIN, HIGH);
     }
@@ -299,6 +322,10 @@ boolean reconnect(void) {
     client.subscribe("/countryhouse/sensor_key");
     #ifdef DEBUG
       Serial.println(F("Connected to: /countryhouse/sensor_key"));
+    #endif
+    client.subscribe("/countryhouse/heating/curentTemperature");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/heating/curentTemperature"));
     #endif
   }
   return client.connected();

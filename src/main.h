@@ -85,6 +85,8 @@ void ds18b20StartConversion(byte ds18b20Addr[8]);
  */
 float ds18b20ReadScratchpad(byte ds18b20Addr[8]);
 
+void calcAvarage(float sensor1, float sensor2);
+
 boolean ColdStart = 1;
 
 // OneWire  ds(ONEWIRE_BUS);  // on pin 10 (a 4.7K resistor is necessary)
@@ -93,8 +95,8 @@ byte ds18b20Data[12];
 uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
 uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
 
-float ds18b20TemperatureSensor1;
-float ds18b20TemperatureSensor2;
+float ds18b20TemperatureSensor1 = -200.0;
+float ds18b20TemperatureSensor2 = -200.0;
 
 // Переменная для хранения времени последней отправки данных
 long previousUpdateTime1 = 0;
@@ -102,6 +104,17 @@ long previousUpdateTime2 = 0;
 //long previousUpdateTime = 0;
 
 byte ledState = 0;
+
+struct HeatingControl {
+	float curentAverageTemperature;		// Текущая средняя температура в доме
+	byte heatingState;	// Состояние котла
+	float targetTemperature;	// Идентификатор пакета.
+	float targetTemperatureHiden;	// ID исполнительного устройства, может принимать значения 1-254
+	byte heatingCommand;		// Название параметра (feedTemperature, returnTemperature, relayState...)
+};
+
+HeatingControl heatingControl;
+
 // -------------------------------------- BEGIN - Глобальные переменные -------------------------------------
 byte Led = 0;                             //Переменная для хранения состояния светодиода
 boolean Relay1 = HIGH;                    //Переменная для хранения состояния Реле 1
