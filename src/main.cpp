@@ -1,7 +1,4 @@
 #include "main.h"
-#include "ds18b20.h"
-Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
-Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 10000);
 
 void setup() {
   heatingControl.curentAverageTemperature = 0.0;
@@ -151,6 +148,7 @@ void initNetwork(void)
 }
 /*############################# End initNetwork ##############################*/
 
+<<<<<<< HEAD
 /*
  * Инициируем работу с датчиком DS18B20
  */
@@ -224,6 +222,8 @@ void calcAvarage(float sensor1, float sensor2) {
     client.publish("/countryhouse/heating/curentTemperature", dataTempChar);
   }
 }
+=======
+>>>>>>> 12068780623290a60ffa32b11c8f3cf5a6a56ce9
 // --------------------------------------- BEGIN - void callback ------------------------------------------
 // Чтение данных из MQTT брокера
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -276,12 +276,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
       digitalWrite(LED_PIN, HIGH);
       ledState = 1;
     }
-//    String value = String((char*)payload);
-//    SensorKey = value.substring(0, value.indexOf(';')).toInt();
-//    Serial.print("Znachenie prisvoenoe peremennoy SensorKey: ");
-//    Serial.println(SensorKey);
-//    ledState = SensorKey;
-//    digitalWrite(LED_PIN, SensorKey);
   }
 
 }

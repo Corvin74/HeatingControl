@@ -9,41 +9,64 @@
 #define MAIN_H_
 
 #include <Arduino.h>
-// #include <LiquidCrystal_I2C.h>
-// #include <DallasTemperature.h>
-// #include <EEPROM.h>
 #include <SPI.h>
 #include <Ethernet2.h>
 #include <PubSubClient.h>
-// #include <OneWire.h>
+#include "ds18b20.h"
+
+// #include <LiquidCrystal_I2C.h>
+// #include <DallasTemperature.h>
+// #include <EEPROM.h>
 // #include <Wire.h>
+/******************************************************************************/
+
 /**************************************************************/
 /* Настройка дополнительных параметров: отладка, сеть, etc... */
 /**************************************************************/
-
 // При отладке компилировать с диагностическими сообщениями
 #ifndef DEBUG
   #define DEBUG
 #endif
-
 // Для инициализации IP адреса по DHCP
 #ifndef DHCP
   #define GET_DHCP
 #endif
-/******************************************************************************/
 // Название устройства при подключении к MQTT
 #define DEVICE_NAME "TermostatOnArduino"
-
-// Для DS18B20
-// #define ONEWIRE_BUS 2				// Номер пина Arduino с подключенным датчиком
-#define TEMP1_UPDATE_TIME 10000		// Определяем периодичность проверок
-#define TEMP2_UPDATE_TIME 12000		// Определяем периодичность проверок
-#define SEND_UPDATE_TIME 120000		// Определяем периодичность отправки через RS485
-
-// Для RS485
-#define SerialTxControl 11			// RS485 указываем номер вывода arduino, к которому подключены выводы RE и DE конвертирующего модуля
+// Интервалы опроса датчиков
+#define TEMP1_UPDATE_TIME 10000
+#define TEMP2_UPDATE_TIME 12000
+// Интервал отправки данных на базовый блок по интерфейсу RS485
+#define SEND_UPDATE_TIME 120000
+// Для настройки интерфейса RS485
+// Указываем номер вывода arduino, к которому подключены выводы RE и DE
+// конвертирующего модуля
+#define SerialTxControl 11
+// Режим передачи
 #define RS485Transmit    HIGH
+// Режим приема
 #define RS485Receive     LOW
+
+/******************************************************************************/
+
+/******************************************************************************/
+/*************************************************************)**/
+/* Создание необходимых объектов, объявление переменных, etc... */
+/****************************************************************/
+// Для DS18B20
+// Адрес первого датчика
+uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
+// Адрес второго датчика
+uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
+
+float ds18b20TemperatureSensor1;
+float ds18b20TemperatureSensor2;
+
+Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 10000);
+Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 12000);
+
+
+
 char buffer[100];					// Буфер приема информации через RS485
 
 #define LED_PIN 9
@@ -72,6 +95,7 @@ void initSerial(void);
  */
 void initNetwork(void);
 
+<<<<<<< HEAD
 /*
  * Инициируем работу с датчиком DS18B20
  */
@@ -97,6 +121,10 @@ uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
 
 float ds18b20TemperatureSensor1 = -200.0;
 float ds18b20TemperatureSensor2 = -200.0;
+=======
+boolean ColdStart = 1;
+
+>>>>>>> 12068780623290a60ffa32b11c8f3cf5a6a56ce9
 
 // Переменная для хранения времени последней отправки данных
 long previousUpdateTime1 = 0;
