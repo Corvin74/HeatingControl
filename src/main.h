@@ -73,52 +73,61 @@ boolean reconnect(void);
 /*
  * Среднее значение температуры в доме
  */
-void calcAvarage(float sensor1, float sensor2);
-
+float calcAvarage(float sensor1, float sensor2);
+/*
+ * Мигаем светодиодом
+ * ledPin - пин к которому подключен светодиод
+ * time - время в мс
+ * quantity - количество вспышек
+ */
+void flashLed(uint8_t ledPin, uint16_t time, uint8_t quantity);
 /****************************************************************/
 /*         Описание переменных используемых в программе         */
 /****************************************************************/
 // Признак первого запуска
-uint8_t coldStart = 1;
+uint8_t coldStart;
 // Адреса датчиков используемых в проекте
 uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
 uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
 uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
+// Объекты датчиков температуры
+Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
+Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 10000);
+Ds18b20 mySensor3(ds18b20Sensor3, sizeof(ds18b20Sensor3), 10000);
 // Текущие данные с датчиков температуры
-float dsSensor1 = -200.0;
-float dsSensor2 = -200.0;
-float dsSensor3 = -200.0;
+float dsSensor1;
+float dsSensor2;
+float dsSensor3;
 // Переменные для хранения времени последнего обновления данных
 long previousUpdateTime1;
 long previousUpdateTime2;
 long previousUpdateTime3;
 
-byte ledState = 0;
-
 struct HeatingControl {
 	float curentAverageTemperature;		// Текущая средняя температура в доме
 	byte heatingState;	// Состояние котла
-	float targetTemperature;	// Идентификатор пакета.
-	float targetTemperatureHiden;	// ID исполнительного устройства, может принимать значения 1-254
-	byte heatingCommand;		// Название параметра (feedTemperature, returnTemperature, relayState...)
+	float targetTemperature;	// Текущая целевая температура
+	float targetTemperatureHiden;	// Уставка целевой температуры
+	byte heatingCommand;		// Отопление для команд
+  byte heatingChanged;
 };
 
 HeatingControl heatingControl;
 
-// -------------------------------------- BEGIN - Глобальные переменные -------------------------------------
-byte Led = 0;                             //Переменная для хранения состояния светодиода
-boolean Relay1 = HIGH;                    //Переменная для хранения состояния Реле 1
-boolean Relay2 = HIGH;                    //Переменная для хранения состояния Реле 2
-boolean SensorKey = LOW;                 //Переменная для хранения состояния сенсорной кнопки
-// -------------------------------------- END - Глобальные переменные ---------------------------------------
+struct MessageMQTT {
+	String topic;		// Текущая средняя температура в доме
+	String payload;	// Состояние котла
+};
 
-// Утановить IP адресс для этой Arduino (должен быть уникальным в вашей сети)
+MessageMQTT messageMQTT;
+
+// Статический IP-адрес для модуля W5500
 IPAddress ip(172, 20, 20, 195);
-
+// MAC-адрес для модуля W5500
 byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02 };
 
-// Уставновить IP адресс MQTT брокера
-// byte server[] = { 172, 16, 6, 40 };
+// IP-адресс MQTT брокера
+// IPAddress server(172, 20, 20, 125);
 IPAddress server(172, 16, 6, 40);
 
 // Уставновить Логин и Пароль для подключения к MQTT брокеру

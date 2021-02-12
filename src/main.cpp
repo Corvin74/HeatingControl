@@ -1,24 +1,26 @@
 #include "main.h"
 
-Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
-Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 10000);
-
 void setup() {
   initializeVariables();
-
   initializeThePeriphery();
   initSerial();
   initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
   mySensor1.startConversion();
   mySensor2.startConversion();
+  mySensor3.startConversion();
 }
 
 void loop() {
-  char dataTempChar[5];
   client.loop();
+  if (heatingControl.heatingChanged) {
+    heatingControl.heatingChanged = 0;
+    messageMQTT.topic = "";
+    messageMQTT.payload = "";
+  }
+  char dataTempChar[5];
   unsigned long currentMillis = millis();
-  if (currentMillis - previousUpdateTime1 > TEMP2_UPDATE_TIME) {
+  if (currentMillis - previousUpdateTime1 > TEMP1_UPDATE_TIME) {
     previousUpdateTime1 = currentMillis;
     mySensor1.readScratchpad();
     mySensor1.startConversion();
@@ -42,21 +44,80 @@ void loop() {
     dtostrf(mySensor2.currentTemperature, 5, 2, dataTempChar);
     client.publish("/countryhouse/ds18b20_2", dataTempChar);
     calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
+    if (heatingControl.curentAverageTemperature > heatingControl.targetTemperature) {
+      client.publish("/countryhouse/heating/Command", "ON");
+      digitalWrite(RELAY1_PIN, LOW);
+      heatingControl.heatingChanged = 1;
+    } else {
+      client.publish("/countryhouse/heating/Command", "OFF");
+      digitalWrite(RELAY1_PIN, HIGH);
+      heatingControl.heatingChanged = 1;
+    }
   }
-  // if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 0 ) ) { // Если кнопка нажата
-  //   digitalWrite(LED_PIN, HIGH);// зажигаем светодиод
-  //   client.publish("/countryhouse/sensor_key", "ON");
-  //   ledState = 1;
-  //   delay(500);
-  // }
-  // if ( ( digitalRead( BUTTON_PIN ) == HIGH ) && ( ledState == 1 ) ) { // Если кнопка нажата
-  //   digitalWrite(LED_PIN, LOW);// зажигаем светодиод
-  //   client.publish("/countryhouse/sensor_key", "OFF");
-  //   ledState = 0;
-  //   delay(500);
-  // }
+  if (currentMillis - previousUpdateTime3 > TEMP3_UPDATE_TIME) {
+    previousUpdateTime3 = currentMillis;
+    mySensor3.readScratchpad();
+    mySensor3.startConversion();
+    #ifdef DEBUG
+      Serial.print(F("Sensor3 = "));
+      Serial.print(mySensor3.currentTemperature);
+      Serial.println(" °C");
+    #endif
+    dtostrf(mySensor3.currentTemperature, 5, 2, dataTempChar);
+    client.publish("/countryhouse/ds18b20_3", dataTempChar);
+    // calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
+  }
+  if ((messageMQTT.topic == "/countryhouse/heating/Command") && !(heatingControl.heatingChanged)) {
+    #ifdef DEBUG
+      Serial.print("Topic: ");
+      Serial.print(messageMQTT.topic);
+      Serial.print(" - ");
+      Serial.println(messageMQTT.payload);
+    #endif
+    if (messageMQTT.payload == "OFF") {
+      // client.publish("/countryhouse/heating/State", "OFF");
+      #ifdef DEBUG
+        Serial.print("Incoming command: ");
+        Serial.println(messageMQTT.payload);
+      #endif
+      digitalWrite(RELAY1_PIN, HIGH);
+      heatingControl.heatingChanged = 1;
+    } else {
+      // client.publish("/countryhouse/heating/State", "ON");
+      #ifdef DEBUG
+        Serial.print("Incoming command: ");
+        Serial.println(messageMQTT.payload);
+      #endif
+      digitalWrite(RELAY1_PIN, LOW);
+      heatingControl.heatingChanged = 1;
+    }
+  }
+  if (messageMQTT.topic == "/countryhouse/heating/targetTemperature") {
+    heatingControl.targetTemperature = messageMQTT.payload.toFloat();
+  }
 }
 
+/*
+ * Инициализируем переменные используемые в программе
+ */
+void initializeVariables(void){
+  coldStart = 1;
+
+  dsSensor1 = -200.0;
+  dsSensor2 = -200.0;
+  dsSensor3 = -200.0;
+
+  heatingControl.curentAverageTemperature = 0.0;
+  heatingControl.heatingState = 0;
+  heatingControl.targetTemperature = 0.0;
+  heatingControl.targetTemperatureHiden = 0.0;
+  heatingControl.heatingCommand = 0;
+  heatingControl.heatingChanged = 0;
+
+  previousUpdateTime1 = 0;
+  previousUpdateTime2 = 0;
+  previousUpdateTime3 = 0;
+}
 /*
  * Инициализируем работу портов
  */
@@ -67,21 +128,6 @@ void initializeThePeriphery(void){
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
 }
-
-/*
- * Инициализируем работу портов
- */
-void initializeVariables(void){
-  heatingControl.curentAverageTemperature = 0.0;
-  heatingControl.heatingState = 0;
-  heatingControl.targetTemperature = 0.0;
-  heatingControl.targetTemperatureHiden = 0.0;
-  heatingControl.heatingCommand = 0;
-
-  previousUpdateTime1 = 0;
-  previousUpdateTime2 = 0;
-}
-
 /*
  * Инициализируем работу по шине UART на скорости 9600 бит/сек.
  */
@@ -91,51 +137,31 @@ void initializeVariables(void){
      delay(100); // hang out until serial port opens
    }
  }
-/*############################## End initSerial ##############################*/
-
 /*
  * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
  * Ethernet2, если использовать EthernetShield W5100 надо применять библиотеку
  * Ethernet
  */
-void initNetwork(void)
-{
+void initNetwork(void){
   #ifdef DEBUG
     Serial.println(F("Start ethernet..."));
   #endif
-
   #ifdef GET_DHCP
     if (Ethernet.begin(mac) == 0) {
       Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
-      for (;;){
-        digitalWrite(LED_PIN, HIGH);
-        delay(250);
-        digitalWrite(LED_PIN, LOW);
-        delay(250);
-      }
+      flashLed(LED_PIN, 250, 20);
     }
-    digitalWrite(LED_PIN, HIGH);
-    delay(150);
-    digitalWrite(LED_PIN, LOW);
-    delay(150);
+    flashLed(LED_PIN, 100, 2);
     // Выводим в консоль адрес присвоеный интерфейсу
     Serial.print(F("My DHCP IP address: "));
   #else
     if (Ethernet.begin(mac,ip) == 0) {
       Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
-      for (;;){
-        digitalWrite(LED_PIN, HIGH);
-        delay(250);
-        digitalWrite(LED_PIN, LOW);
-        delay(250);
-      }
+      flashLed(LED_PIN, 250, 20);
     }
     // Выводим в консоль адрес присвоеный интерфейсу
     Serial.print(F("My static IP address: "));
-    digitalWrite(LED_PIN, HIGH);
-    delay(150);
-    digitalWrite(LED_PIN, LOW);
-    delay(150);
+    flashLed(LED_PIN, 100, 2);
   #endif
 
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
@@ -146,149 +172,96 @@ void initNetwork(void)
     } else {
       Serial.println(Ethernet.localIP()[thisByte], DEC);
     }
-
   }
 }
 /*############################# End initNetwork ##############################*/
 
 /*
- * Инициируем работу с датчиком DS18B20
+ * Возвращает среднее значение темаературы
  */
-void initDS18B20(void){
-  Serial.print("ROM sensor1 =");
-  for( byte i = 0; i < 8; i++) {
-    Serial.write(' ');
-    Serial.print(ds18b20Sensor1[i], HEX);
-  }
-  Serial.println();
-  Serial.print("ROM sensor2 =");
-  for( byte i = 0; i < 8; i++) {
-    Serial.write(' ');
-    Serial.print(ds18b20Sensor2[i], HEX);
-  }
-  Serial.println();
-}
-/*############################# End initDS18B20 ##############################*/
-
-void calcAvarage(float sensor1, float sensor2) {
+float calcAvarage(float sensor1, float sensor2){
+  #ifdef DEBUG
+    Serial.print(F("sensor1 = "));
+    Serial.print(sensor1);
+    Serial.println(F(" °C"));
+    Serial.print(F("sensor2 = "));
+    Serial.print(sensor2);
+    Serial.println(F(" °C"));
+  #endif
   char tempChar[5];
-  if ((sensor1 > -200) && (sensor2 > -200)) {
-    float tmp = 0.0;
-    tmp = (dsSensor1 + dsSensor2) / 2;
-    heatingControl.curentAverageTemperature = tmp;
-    dtostrf(tmp, 5, 2, tempChar);
+  if ((sensor1 > -200) && (sensor2 > -200)){
+    heatingControl.curentAverageTemperature = (sensor1 + sensor2) / 2;
+    dtostrf(heatingControl.curentAverageTemperature, 5, 2, tempChar);
     #ifdef DEBUG
       Serial.print(F("Average temperature = "));
       Serial.print(tempChar);
-      Serial.println(" °C");
+      Serial.println(F(" °C"));
     #endif
     client.publish("/countryhouse/heating/curentTemperature", tempChar);
+    return heatingControl.curentAverageTemperature;
   }
 }
-// --------------------------------------- BEGIN - void callback ------------------------------------------
-// Чтение данных из MQTT брокера
-void callback(char* topic, byte* payload, unsigned int length) {
-  // проверка новых сообщений в подписках у брокера
-    payload[length] = '\0';
-    Serial.print("Topic: ");
-    Serial.print(String(topic));
-    Serial.println(" - ");
-    String strPayload = String((char*)payload);
-
-  // if (String(topic) == "/countryhouse/led") {
-  //   String value = String((char*)payload);
-  //   Led = value.substring(0, value.indexOf(';')).toInt();
-  //   byte ledToPWM = map(Led, 0, 100, 0, 255);
-  //   analogWrite(LED_STRIP, ledToPWM);
-  //   Serial.print("Znachenie prisvoenoe peremennoy Led: ");
-  //   Serial.println(Led);
-  //   char dataTempChar[5];
-  //   if (Led < 10) {
-  //     dtostrf(Led, 1, 0, dataTempChar);
-  //   } else if ((Led > 9) && (Led < 100)) {
-  //     dtostrf(Led, 2, 0, dataTempChar);
-  //   } else {
-  //     dtostrf(Led, 3, 0, dataTempChar);
-  //   }
-  //   client.publish("/countryhouse/led_in", dataTempChar);
-  // }
-
-  if (String(topic) == "/countryhouse/relay1") {
-    if (strPayload == "ON"){
-      digitalWrite(RELAY1_PIN, LOW);
-    } else if (strPayload == "OFF"){
-      digitalWrite(RELAY1_PIN, HIGH);
-    }
+/*
+ * Мигаем светодиодом
+ * ledPin - пин к которому подключен светодиод
+ * time - время в мс
+ * quantity - количество вспышек
+ */
+void flashLed(uint8_t ledPin, uint16_t time, uint8_t quantity){
+  for (uint8_t i = 0; i <= quantity; i++) {
+    digitalWrite(ledPin, HIGH);
+    delay(time);
+    digitalWrite(ledPin, LOW);
+    delay(time);
   }
-
-  if (String(topic) == "/countryhouse/relay2") {
-    if (strPayload == "ON"){
-      digitalWrite(RELAY2_PIN, LOW);
-    } else if (strPayload == "OFF"){
-      digitalWrite(RELAY2_PIN, HIGH);
-    }
-  }
-
-  // if (String(topic) == "/countryhouse/sensor_key") {
-  //   if (strPayload == "OFF"){
-  //     digitalWrite(LED_PIN, LOW);
-  //     ledState = 0;
-  //   } else if (strPayload == "ON"){
-  //     digitalWrite(LED_PIN, HIGH);
-  //     ledState = 1;
-  //   }
-//    String value = String((char*)payload);
-//    SensorKey = value.substring(0, value.indexOf(';')).toInt();
-//    Serial.print("Znachenie prisvoenoe peremennoy SensorKey: ");
-//    Serial.println(SensorKey);
-//    ledState = SensorKey;
-//    digitalWrite(LED_PIN, SensorKey);
-  // }
-
 }
-// ---------------------------------------- END - void callback -------------------------------------------
-// --------------------------------------- BEGIN - Подключение и подписка на MQTT broker ----------------------------------
 
+/*############################## Work with MQTT ##############################*/
+
+/*
+ * Колбэк функция для работы с MQTT-брокером
+ */
+void callback(char* topic, byte* payload, uint16_t length){
+  messageMQTT.topic = "";
+  messageMQTT.payload = "";
+  messageMQTT.topic = String(topic);
+  for (uint16_t i = 0; i < length; i++) {                // отправляем данные из топика
+    messageMQTT.payload += String((char)payload[i]);
+  }
+}
 /*
  * Подключение к брокеру MQTT, подписка на топики и начальная инициализация состояний
  * реле, выключателей и т.д.
  */
 boolean reconnect(void) {
-  #ifdef DEBUG
-    Serial.println(F("reconnect..."));
-  #endif
   if (client.connect(DEVICE_NAME, mqtt_username, mqtt_password)) {
     //TODO Настроить загрузку начальных значений из EEPROM
     if (coldStart) {
-      client.publish("/countryhouse/led_in", "0");
-      client.publish("/countryhouse/relay1in", "OFF");
-      client.publish("/countryhouse/relay2in", "OFF");
-      // client.publish("/countryhouse/sensor_key", "OFF");
-      client.publish("/countryhouse/heating/curentTemperature", "0");
+      client.publish("/countryhouse/heating/Command", "OFF");
+      client.publish("/countryhouse/heating/curentTemperature", "0.00");
+      client.publish("/countryhouse/heating/targetTemperature", "21.50");
+      client.publish("/countryhouse/heating/targetTemperatureHiden", "10.00");
       coldStart = 0;
-      // digitalWrite(LED_PIN, HIGH);
     }
-    client.subscribe("/countryhouse/led");
+    client.subscribe("/countryhouse/heating/State");
+    client.subscribe("/countryhouse/heating/Command");
     #ifdef DEBUG
-      Serial.println(F("Connected to: /countryhouse/led"));
+      Serial.println(F("Connected to: /countryhouse/heating/State"));
     #endif
-    client.subscribe("/countryhouse/relay1");
-    #ifdef DEBUG
-      Serial.println(F("Connected to: /countryhouse/relay1"));
-    #endif
-    client.subscribe("/countryhouse/relay2");
-    #ifdef DEBUG
-      Serial.println(F("Connected to: /countryhouse/relay2"));
-    #endif
-    // client.subscribe("/countryhouse/sensor_key");
-    // #ifdef DEBUG
-    //   Serial.println(F("Connected to: /countryhouse/sensor_key"));
-    // #endif
     client.subscribe("/countryhouse/heating/curentTemperature");
     #ifdef DEBUG
       Serial.println(F("Connected to: /countryhouse/heating/curentTemperature"));
     #endif
+    client.subscribe("/countryhouse/heating/targetTemperature");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/heating/targetTemperature"));
+    #endif
+    client.subscribe("/countryhouse/heating/targetTemperatureHiden");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/heating/targetTemperatureHiden"));
+    #endif
   }
   return client.connected();
 }
-// --------------------------------------- END - Подключение и подписка на MQTT broker ----------------------------------
+
+/*########################### End work with MQTT #############################*/
