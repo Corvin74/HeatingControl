@@ -12,11 +12,12 @@ void setup() {
 }
 
 void loop() {
+  messageMQTT.topic = "";
+  messageMQTT.payload = "";
   client.loop();
   if (heatingControl.heatingChanged) {
+  // if ((heatingControl.heatingChanged) && (messageMQTT.topic == "/countryhouse/heating/Command")) {
     heatingControl.heatingChanged = 0;
-    messageMQTT.topic = "";
-    messageMQTT.payload = "";
   }
   char dataTempChar[5];
   unsigned long currentMillis = millis();
@@ -30,7 +31,10 @@ void loop() {
       Serial.println(" °C");
     #endif
     dtostrf(mySensor1.currentTemperature, 5, 2, dataTempChar);
-    client.publish("/countryhouse/ds18b20_1", dataTempChar);
+    if (!client.publish("/countryhouse/ds18b20_1", dataTempChar)) {
+      Serial.println(F("Publish sensor1 temperature failed"));
+    }
+    // client.publish("/countryhouse/ds18b20_1", dataTempChar);
   }
   if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
     previousUpdateTime2 = currentMillis;
@@ -44,7 +48,12 @@ void loop() {
     dtostrf(mySensor2.currentTemperature, 5, 2, dataTempChar);
     client.publish("/countryhouse/ds18b20_2", dataTempChar);
     calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
-    if (heatingControl.curentAverageTemperature > heatingControl.targetTemperature) {
+    #ifdef DEBUG
+      Serial.print(F("Current target temperature = "));
+      Serial.print(heatingControl.targetTemperature);
+      Serial.println(" °C");
+    #endif
+    if (heatingControl.curentAverageTemperature < heatingControl.targetTemperature) {
       client.publish("/countryhouse/heating/Command", "ON");
       digitalWrite(RELAY1_PIN, LOW);
       heatingControl.heatingChanged = 1;
@@ -93,6 +102,11 @@ void loop() {
     }
   }
   if (messageMQTT.topic == "/countryhouse/heating/targetTemperature") {
+    #ifdef DEBUG
+      Serial.print(F("Current target temperature from topic = "));
+      Serial.print(heatingControl.targetTemperature);
+      Serial.println(" °C");
+    #endif
     heatingControl.targetTemperature = messageMQTT.payload.toFloat();
   }
 }
@@ -155,10 +169,11 @@ void initNetwork(void){
     // Выводим в консоль адрес присвоеный интерфейсу
     Serial.print(F("My DHCP IP address: "));
   #else
-    if (Ethernet.begin(mac,ip) == 0) {
-      Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
-      flashLed(LED_PIN, 250, 20);
-    }
+    Ethernet.begin(mac,ip,ip_dns,ip_gateway);
+    // if (Ethernet.begin(mac,ip) == 0) {
+    //   Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
+    //   flashLed(LED_PIN, 250, 20);
+    // }
     // Выводим в консоль адрес присвоеный интерфейсу
     Serial.print(F("My static IP address: "));
     flashLed(LED_PIN, 100, 2);
@@ -228,6 +243,15 @@ void callback(char* topic, byte* payload, uint16_t length){
   for (uint16_t i = 0; i < length; i++) {                // отправляем данные из топика
     messageMQTT.payload += String((char)payload[i]);
   }
+  #ifdef DEBUG
+    // Serial.println(F("########################################################"));
+    // Serial.print(F("Current topic = "));
+    // Serial.println(messageMQTT.topic);
+    // Serial.print(F("Current payload = "));
+    // Serial.println(messageMQTT.payload);
+    // Serial.println(F("########################################################"));
+  #endif
+
 }
 /*
  * Подключение к брокеру MQTT, подписка на топики и начальная инициализация состояний
@@ -239,14 +263,17 @@ boolean reconnect(void) {
     if (coldStart) {
       client.publish("/countryhouse/heating/Command", "OFF");
       client.publish("/countryhouse/heating/curentTemperature", "0.00");
-      client.publish("/countryhouse/heating/targetTemperature", "21.50");
-      client.publish("/countryhouse/heating/targetTemperatureHiden", "10.00");
+      client.publish("/countryhouse/heating/targetTemperature", "10.00");
+      client.publish("/countryhouse/heating/targetTemperatureHiden", "26.50");
       coldStart = 0;
     }
     client.subscribe("/countryhouse/heating/State");
-    client.subscribe("/countryhouse/heating/Command");
     #ifdef DEBUG
       Serial.println(F("Connected to: /countryhouse/heating/State"));
+    #endif
+    client.subscribe("/countryhouse/heating/Command");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/heating/Command"));
     #endif
     client.subscribe("/countryhouse/heating/curentTemperature");
     #ifdef DEBUG

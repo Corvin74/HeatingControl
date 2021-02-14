@@ -91,9 +91,9 @@ uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
 uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
 uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
 // Объекты датчиков температуры
-Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), 5000);
-Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), 10000);
-Ds18b20 mySensor3(ds18b20Sensor3, sizeof(ds18b20Sensor3), 10000);
+Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), TEMP1_UPDATE_TIME);
+Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), TEMP2_UPDATE_TIME);
+Ds18b20 mySensor3(ds18b20Sensor3, sizeof(ds18b20Sensor3), TEMP3_UPDATE_TIME);
 // Текущие данные с датчиков температуры
 float dsSensor1;
 float dsSensor2;
@@ -121,14 +121,22 @@ struct MessageMQTT {
 
 MessageMQTT messageMQTT;
 
-// Статический IP-адрес для модуля W5500
-IPAddress ip(172, 20, 20, 195);
 // MAC-адрес для модуля W5500
 byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02 };
+// Статический IP-адрес для модуля W5500
+// IPAddress ip(172, 20, 20, 195);
+IPAddress ip(172, 20, 10, 163);
+// Адрес DNS сервера для модуля W5500
+IPAddress ip_dns(8, 8, 8, 8);
+// Адрес шлюза для модуля W5500
+IPAddress ip_gateway(172, 20, 20, 1);
+// Адрес подсети для модуля W5500
+IPAddress ip_subnet(255, 255, 255, 0);
 
 // IP-адресс MQTT брокера
+IPAddress server(172, 20, 10, 102);
 // IPAddress server(172, 20, 20, 125);
-IPAddress server(172, 16, 6, 40);
+// IPAddress server(172, 16, 6, 40);
 
 // Уставновить Логин и Пароль для подключения к MQTT брокеру
 const char* mqtt_username = "corvin";
