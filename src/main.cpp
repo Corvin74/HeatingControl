@@ -21,39 +21,24 @@ void loop() {
   }
   char dataTempChar[5];
   unsigned long currentMillis = millis();
+
   if (currentMillis - previousUpdateTime1 > TEMP1_UPDATE_TIME) {
     previousUpdateTime1 = currentMillis;
-    mySensor1.readScratchpad();
-    mySensor1.startConversion();
-    #ifdef DEBUG
-      Serial.print(F("Sensor1 = "));
-      Serial.print(mySensor1.currentTemperature);
-      Serial.println(" °C");
-    #endif
-    dtostrf(mySensor1.currentTemperature, 5, 2, dataTempChar);
+    dtostrf(mySensor1.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_1", dataTempChar)) {
       Serial.println(F("Publish sensor1 temperature failed"));
     }
-    // client.publish("/countryhouse/ds18b20_1", dataTempChar);
   }
+
   if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
     previousUpdateTime2 = currentMillis;
-    mySensor2.readScratchpad();
-    mySensor2.startConversion();
-    #ifdef DEBUG
-      Serial.print(F("Sensor2 = "));
-      Serial.print(mySensor2.currentTemperature);
-      Serial.println(" °C");
-    #endif
-    dtostrf(mySensor2.currentTemperature, 5, 2, dataTempChar);
-    client.publish("/countryhouse/ds18b20_2", dataTempChar);
-    calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
-    #ifdef DEBUG
-      Serial.print(F("Current target temperature = "));
-      Serial.print(heatingControl.targetTemperature);
-      Serial.println(" °C");
-    #endif
-    if (heatingControl.curentAverageTemperature < heatingControl.targetTemperature) {
+    dtostrf(mySensor2.publishSensor(), 5, 2, dataTempChar);
+    if (!client.publish("/countryhouse/ds18b20_2", dataTempChar)) {
+      Serial.println(F("Publish sensor2 temperature failed"));
+    }
+
+    heatingControl.curentAverageTemperature = calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
+    if ((heatingControl.curentAverageTemperature - heatingControl.hysteresis) < (heatingControl.targetTemperature + heatingControl.hysteresis)) {
       if (heatingControl.currentState == 0) {
         client.publish("/countryhouse/heating/Command", "ON");
         digitalWrite(RELAY1_PIN, LOW);
@@ -69,16 +54,10 @@ void loop() {
   }
   if (currentMillis - previousUpdateTime3 > TEMP3_UPDATE_TIME) {
     previousUpdateTime3 = currentMillis;
-    mySensor3.readScratchpad();
-    mySensor3.startConversion();
-    #ifdef DEBUG
-      Serial.print(F("Sensor3 = "));
-      Serial.print(mySensor3.currentTemperature);
-      Serial.println(" °C");
-    #endif
-    dtostrf(mySensor3.currentTemperature, 5, 2, dataTempChar);
-    client.publish("/countryhouse/ds18b20_3", dataTempChar);
-    // calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
+    dtostrf(mySensor3.publishSensor(), 5, 2, dataTempChar);
+    if (!client.publish("/countryhouse/ds18b20_3", dataTempChar)) {
+      Serial.println(F("Publish sensor3 temperature failed"));
+    }
   }
   if ((messageMQTT.topic == "/countryhouse/heating/Command") && !(heatingControl.heatingChanged)) {
     #ifdef DEBUG
@@ -88,7 +67,6 @@ void loop() {
       Serial.println(messageMQTT.payload);
     #endif
     if (messageMQTT.payload == "OFF") {
-      // client.publish("/countryhouse/heating/State", "OFF");
       #ifdef DEBUG
         Serial.print("Incoming command: ");
         Serial.println(messageMQTT.payload);
@@ -107,12 +85,31 @@ void loop() {
   }
   if (messageMQTT.topic == "/countryhouse/heating/targetTemperature") {
     #ifdef DEBUG
+      Serial.print(F("Current target temperature = "));
+      Serial.print(heatingControl.targetTemperature);
+      Serial.println(" °C");
+    #endif
+    #ifdef DEBUG
       Serial.print(F("Current target temperature from topic = "));
       Serial.print(heatingControl.targetTemperature);
       Serial.println(" °C");
     #endif
     heatingControl.targetTemperature = messageMQTT.payload.toFloat();
     saveSettingsToEEPROM(&heatingControl);
+  }
+  if (messageMQTT.topic == "/countryhouse/heating/Auto") {
+    #ifdef DEBUG
+      Serial.print(F("Current state from topic 'Auto' = "));
+      Serial.println(messageMQTT.payload);
+    #endif
+    if ((messageMQTT.payload == "OFF") && (heatingControl.heatingAuto == 1)) {
+      heatingControl.heatingAuto = 0;
+      digitalWrite(RELAY2_PIN, HIGH);
+    } else if ((messageMQTT.payload == "ON") && (heatingControl.heatingAuto == 0)) {
+      heatingControl.heatingAuto = 1;
+      digitalWrite(RELAY2_PIN, LOW);
+    }
+    // saveSettingsToEEPROM(&heatingControl);
   }
 }
 
@@ -126,6 +123,7 @@ void initializeVariables(void){
   dsSensor2 = -200.0;
   dsSensor3 = -200.0;
 
+  heatingControl.hysteresis = 0.5;
   restoreSettingsFromEEPROM(&heatingControl);
 
   previousUpdateTime1 = 0;
@@ -204,16 +202,17 @@ float calcAvarage(float sensor1, float sensor2){
     Serial.println(F(" °C"));
   #endif
   char tempChar[5];
+  float curAvgTemp = 0.00;
   if ((sensor1 > -200) && (sensor2 > -200)){
-    heatingControl.curentAverageTemperature = (sensor1 + sensor2) / 2;
-    dtostrf(heatingControl.curentAverageTemperature, 5, 2, tempChar);
+    curAvgTemp = (sensor1 + sensor2) / 2;
+    dtostrf(curAvgTemp, 5, 2, tempChar);
     #ifdef DEBUG
       Serial.print(F("Average temperature = "));
-      Serial.print(tempChar);
+      Serial.print(curAvgTemp);
       Serial.println(F(" °C"));
     #endif
     client.publish("/countryhouse/heating/curentTemperature", tempChar);
-    return heatingControl.curentAverageTemperature;
+    return curAvgTemp;
   }
 }
 /*
@@ -234,12 +233,6 @@ void flashLed(uint8_t ledPin, uint16_t time, uint8_t quantity){
 /*
  * Работаем с EEPROM
  */
- // float curentAverageTemperature;		// Текущая средняя температура в доме
- // byte currentState;	// Состояние котла
- // float targetTemperature;	// Текущая целевая температура
- // float targetTemperatureHiden;	// Уставка целевой температуры
- // byte heatingCommand;		// Отопление для команд
- // byte heatingChanged;
 uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct){
   int16_t eepromAddress = 0;
   #ifdef DEBUG
@@ -247,50 +240,64 @@ uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct){
     Serial.println(eepromAddress);
   #endif
   EEPROM.put(eepromAddress, heatingStruct->curentAverageTemperature);
+
   eepromAddress += sizeof(float);
   #ifdef DEBUG
     Serial.print(F("heatingStruct->currentState save to EEPROM in arrdess: "));
     Serial.println(eepromAddress);
   #endif
   EEPROM.put(eepromAddress,heatingStruct->currentState);
+
   eepromAddress += sizeof(uint8_t);
   #ifdef DEBUG
     Serial.print(F("heatingStruct->targetTemperature save to EEPROM in arrdess: "));
     Serial.println(eepromAddress);
   #endif
   EEPROM.put(eepromAddress,heatingStruct->targetTemperature);
+
   eepromAddress += sizeof(float);
   #ifdef DEBUG
-    Serial.print(F("heatingStruct->targetTemperatureHiden save to EEPROM in arrdess: "));
+    Serial.print(F("heatingStruct->hysteresis save to EEPROM in arrdess: "));
     Serial.println(eepromAddress);
   #endif
-  EEPROM.put(eepromAddress,heatingStruct->targetTemperatureHiden);
+  EEPROM.put(eepromAddress,heatingStruct->hysteresis);
+
   eepromAddress += sizeof(float);
   #ifdef DEBUG
-    Serial.print(F("heatingStruct->heatingCommand save to EEPROM in arrdess: "));
+    Serial.print(F("heatingStruct->heatingAuto save to EEPROM in arrdess: "));
     Serial.println(eepromAddress);
   #endif
-  EEPROM.put(eepromAddress,heatingStruct->heatingCommand);
+  EEPROM.put(eepromAddress,heatingStruct->heatingAuto);
+
   eepromAddress += sizeof(uint8_t);
   #ifdef DEBUG
     Serial.print(F("heatingStruct->heatingChanged save to EEPROM in arrdess: "));
     Serial.println(eepromAddress);
   #endif
   EEPROM.put(eepromAddress,heatingStruct->heatingChanged);
+
+  return 0;
 }
 uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct){
   int16_t eepromAddress = 0;
   EEPROM.get(eepromAddress,heatingStruct->curentAverageTemperature);
+
   eepromAddress += sizeof(float);
   EEPROM.get(eepromAddress,heatingStruct->currentState);
+
   eepromAddress += sizeof(uint8_t);
   EEPROM.get(eepromAddress,heatingStruct->targetTemperature);
+
   eepromAddress += sizeof(float);
-  EEPROM.get(eepromAddress,heatingStruct->targetTemperatureHiden);
+  EEPROM.get(eepromAddress,heatingStruct->hysteresis);
+
   eepromAddress += sizeof(float);
-  EEPROM.get(eepromAddress,heatingStruct->heatingCommand);
+  EEPROM.get(eepromAddress,heatingStruct->heatingAuto);
+
   eepromAddress += sizeof(uint8_t);
   EEPROM.get(eepromAddress,heatingStruct->heatingChanged);
+
+  return 0;
 }
 
 /*############################## Work with MQTT ##############################*/
@@ -329,8 +336,15 @@ boolean reconnect(void) {
       dtostrf(heatingControl.targetTemperature, 5, 2, tempChar);
       client.publish("/countryhouse/heating/targetTemperature", tempChar);
       client.publish("/countryhouse/heating/targetTemperatureHiden", tempChar);
+      if (heatingControl.heatingAuto == 0) {
+        client.publish("/countryhouse/heating/Auto", "OFF");
+      } else {
+        client.publish("/countryhouse/heating/Auto", "ON");
+      }
+
       coldStart = 0;
     }
+    client.subscribe("/countryhouse/heating/Auto");
     client.subscribe("/countryhouse/heating/State");
     #ifdef DEBUG
       Serial.println(F("Connected to: /countryhouse/heating/State"));

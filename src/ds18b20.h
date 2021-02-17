@@ -2,6 +2,7 @@
 #define DS18B20_H
 #include <Arduino.h>
 #include <OneWire.h>
+#include <PubSubClient.h>
 #define ONEWIRE_BUS 2				// Номер пина Arduino с подключенным датчиком
 
 // описание класса
@@ -10,10 +11,11 @@ public:
   Ds18b20(uint8_t *sensorAddress, byte length, long updateInterval);
   void setSensorAddress(uint8_t *address, byte length);
   void setUpdateInterval(long updateInterval);
-  uint8_t getSensorAddress();
-  long getUpdateInterval();
-  void startConversion();
-  void readScratchpad();
+  uint8_t getSensorAddress(void);
+  long getUpdateInterval(void);
+  void startConversion(void);
+  void readScratchpad(void);
+  float publishSensor(void);
   float currentTemperature;
 private:
   byte _ds18b20Data[8]; // данные последнего измерения

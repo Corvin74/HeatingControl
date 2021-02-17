@@ -115,8 +115,8 @@ struct HeatingControl {
 	float curentAverageTemperature;		// Текущая средняя температура в доме
 	uint8_t currentState;	// Состояние котла
 	float targetTemperature;	// Текущая целевая температура
-	float targetTemperatureHiden;	// Уставка целевой температуры
-	uint8_t heatingCommand;		// Отопление для команд
+	float hysteresis;	// Допустимый гистерезис целевой температуры
+	uint8_t heatingAuto;		// Авторежим
   uint8_t heatingChanged;
 };
 

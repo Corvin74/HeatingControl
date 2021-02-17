@@ -32,11 +32,11 @@ void Ds18b20::readScratchpad(){
     #ifdef DEBUG
       Serial.print(_ds18b20Data[i], HEX);
       Serial.print(" ");
-    #endif DEBUG
+    #endif
   }
   #ifdef DEBUG
     Serial.print(" - ");
-  #endif DEBUG
+  #endif
   if (63488 == ((_ds18b20Data[1] << 8)^0b11111000)) {
     /* При отрицательном значении ( S=1 ) сначала необходимо перевести
      * дополнительный код в прямой. Для этого надо инвертировать каждый
@@ -57,4 +57,19 @@ void Ds18b20::readScratchpad(){
 
     Ds18b20::currentTemperature = (float)raw / 16.0;
   }
+}
+
+float Ds18b20::publishSensor(void) {
+  Ds18b20::readScratchpad();
+  Ds18b20::startConversion();
+  #ifdef DEBUG
+    Serial.print(F("Sensor1 = "));
+    Serial.print( Ds18b20::currentTemperature );
+    Serial.println(" °C");
+  #endif
+  return Ds18b20::currentTemperature;
+  // if (!client->publish("/countryhouse/ds18b20_1", dataTempChar)) {
+  //   Serial.println(F("Publish sensor1 temperature failed"));
+  // }
+  // client.publish("/countryhouse/ds18b20_1", dataTempChar);
 }
