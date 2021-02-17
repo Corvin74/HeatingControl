@@ -12,6 +12,7 @@
 #include <SPI.h>
 #include <Ethernet2.h>
 #include <PubSubClient.h>
+#include <EEPROM.h>
 #include "ds18b20.h"
 /**************************************************************/
 /* Настройка дополнительных параметров: отладка, сеть, etc... */
@@ -20,11 +21,18 @@
 // При отладке компилировать с диагностическими сообщениями
 #ifndef DEBUG
   #define DEBUG
+  // #undef DEBUG
 #endif
 
 // Для инициализации IP адреса по DHCP
 #ifndef DHCP
   #define GET_DHCP
+#endif
+// Для инициализации статического IP адреса в зависимости от положения
+#ifndef STATIC
+  // #define GET_STATIC_HOME
+  // #define GET_STATIC_WORK
+  // #define GET_STATIC_COUNTRYHOUSE
 #endif
 
 // Название устройства при подключении к MQTT
@@ -105,14 +113,16 @@ long previousUpdateTime3;
 
 struct HeatingControl {
 	float curentAverageTemperature;		// Текущая средняя температура в доме
-	byte heatingState;	// Состояние котла
+	uint8_t currentState;	// Состояние котла
 	float targetTemperature;	// Текущая целевая температура
 	float targetTemperatureHiden;	// Уставка целевой температуры
-	byte heatingCommand;		// Отопление для команд
-  byte heatingChanged;
+	uint8_t heatingCommand;		// Отопление для команд
+  uint8_t heatingChanged;
 };
 
 HeatingControl heatingControl;
+uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct);
+uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct);
 
 struct MessageMQTT {
 	String topic;		// Текущая средняя температура в доме
@@ -123,20 +133,44 @@ MessageMQTT messageMQTT;
 
 // MAC-адрес для модуля W5500
 byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02 };
-// Статический IP-адрес для модуля W5500
-// IPAddress ip(172, 20, 20, 195);
-IPAddress ip(172, 20, 10, 163);
-// Адрес DNS сервера для модуля W5500
-IPAddress ip_dns(8, 8, 8, 8);
-// Адрес шлюза для модуля W5500
-IPAddress ip_gateway(172, 20, 20, 1);
-// Адрес подсети для модуля W5500
-IPAddress ip_subnet(255, 255, 255, 0);
+
+#ifdef GET_STATIC_HOME
+  // Статический IP-адрес для модуля W5500
+  IPAddress ip(172, 20, 10, 163);
+  // Адрес DNS сервера для модуля W5500
+  IPAddress ip_dns(8, 8, 8, 8);
+  // Адрес шлюза для модуля W5500
+  IPAddress ip_gateway(172, 20, 10, 1);
+  // Адрес подсети для модуля W5500
+  IPAddress ip_subnet(255, 255, 255, 0);
+#endif
+
+#ifdef GET_STATIC_WORK
+  // Статический IP-адрес для модуля W5500
+  IPAddress ip(172, 16, 6, 201);
+  // Адрес DNS сервера для модуля W5500
+  IPAddress ip_dns(172, 16, 6, 1);
+  // Адрес шлюза для модуля W5500
+  IPAddress ip_gateway(172, 16, 6, 1);
+  // Адрес подсети для модуля W5500
+  IPAddress ip_subnet(255, 255, 255, 0);
+#endif
+
+#ifdef GET_STATIC_COUNTRYHOUSE
+  // Статический IP-адрес для модуля W5500
+  IPAddress ip(172, 20, 20, 201);
+  // Адрес DNS сервера для модуля W5500
+  IPAddress ip_dns(8, 8, 8, 8);
+  // Адрес шлюза для модуля W5500
+  IPAddress ip_gateway(172, 20, 20, 1);
+  // Адрес подсети для модуля W5500
+  IPAddress ip_subnet(255, 255, 254, 0);
+#endif
 
 // IP-адресс MQTT брокера
-IPAddress server(172, 20, 10, 102);
+// IPAddress server(172, 20, 10, 102);
 // IPAddress server(172, 20, 20, 125);
-// IPAddress server(172, 16, 6, 40);
+IPAddress server(172, 16, 6, 40);
 
 // Уставновить Логин и Пароль для подключения к MQTT брокеру
 const char* mqtt_username = "corvin";

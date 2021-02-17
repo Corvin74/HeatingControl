@@ -54,13 +54,17 @@ void loop() {
       Serial.println(" °C");
     #endif
     if (heatingControl.curentAverageTemperature < heatingControl.targetTemperature) {
-      client.publish("/countryhouse/heating/Command", "ON");
-      digitalWrite(RELAY1_PIN, LOW);
-      heatingControl.heatingChanged = 1;
-    } else {
+      if (heatingControl.currentState == 0) {
+        client.publish("/countryhouse/heating/Command", "ON");
+        digitalWrite(RELAY1_PIN, LOW);
+        heatingControl.heatingChanged = 1;
+        heatingControl.currentState = 1;
+      }
+    } else if (heatingControl.currentState == 1) {
       client.publish("/countryhouse/heating/Command", "OFF");
       digitalWrite(RELAY1_PIN, HIGH);
       heatingControl.heatingChanged = 1;
+      heatingControl.currentState = 0;
     }
   }
   if (currentMillis - previousUpdateTime3 > TEMP3_UPDATE_TIME) {
@@ -108,6 +112,7 @@ void loop() {
       Serial.println(" °C");
     #endif
     heatingControl.targetTemperature = messageMQTT.payload.toFloat();
+    saveSettingsToEEPROM(&heatingControl);
   }
 }
 
@@ -121,12 +126,7 @@ void initializeVariables(void){
   dsSensor2 = -200.0;
   dsSensor3 = -200.0;
 
-  heatingControl.curentAverageTemperature = 0.0;
-  heatingControl.heatingState = 0;
-  heatingControl.targetTemperature = 0.0;
-  heatingControl.targetTemperatureHiden = 0.0;
-  heatingControl.heatingCommand = 0;
-  heatingControl.heatingChanged = 0;
+  restoreSettingsFromEEPROM(&heatingControl);
 
   previousUpdateTime1 = 0;
   previousUpdateTime2 = 0;
@@ -145,7 +145,7 @@ void initializeThePeriphery(void){
 /*
  * Инициализируем работу по шине UART на скорости 9600 бит/сек.
  */
- void initSerial(void){
+void initSerial(void){
    Serial.begin(9600);
    while (!Serial) {
      delay(100); // hang out until serial port opens
@@ -231,6 +231,68 @@ void flashLed(uint8_t ledPin, uint16_t time, uint8_t quantity){
   }
 }
 
+/*
+ * Работаем с EEPROM
+ */
+ // float curentAverageTemperature;		// Текущая средняя температура в доме
+ // byte currentState;	// Состояние котла
+ // float targetTemperature;	// Текущая целевая температура
+ // float targetTemperatureHiden;	// Уставка целевой температуры
+ // byte heatingCommand;		// Отопление для команд
+ // byte heatingChanged;
+uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct){
+  int16_t eepromAddress = 0;
+  #ifdef DEBUG
+    Serial.print(F("heatingStruct->curentAverageTemperature save to EEPROM in arrdess: "));
+    Serial.println(eepromAddress);
+  #endif
+  EEPROM.put(eepromAddress, heatingStruct->curentAverageTemperature);
+  eepromAddress += sizeof(float);
+  #ifdef DEBUG
+    Serial.print(F("heatingStruct->currentState save to EEPROM in arrdess: "));
+    Serial.println(eepromAddress);
+  #endif
+  EEPROM.put(eepromAddress,heatingStruct->currentState);
+  eepromAddress += sizeof(uint8_t);
+  #ifdef DEBUG
+    Serial.print(F("heatingStruct->targetTemperature save to EEPROM in arrdess: "));
+    Serial.println(eepromAddress);
+  #endif
+  EEPROM.put(eepromAddress,heatingStruct->targetTemperature);
+  eepromAddress += sizeof(float);
+  #ifdef DEBUG
+    Serial.print(F("heatingStruct->targetTemperatureHiden save to EEPROM in arrdess: "));
+    Serial.println(eepromAddress);
+  #endif
+  EEPROM.put(eepromAddress,heatingStruct->targetTemperatureHiden);
+  eepromAddress += sizeof(float);
+  #ifdef DEBUG
+    Serial.print(F("heatingStruct->heatingCommand save to EEPROM in arrdess: "));
+    Serial.println(eepromAddress);
+  #endif
+  EEPROM.put(eepromAddress,heatingStruct->heatingCommand);
+  eepromAddress += sizeof(uint8_t);
+  #ifdef DEBUG
+    Serial.print(F("heatingStruct->heatingChanged save to EEPROM in arrdess: "));
+    Serial.println(eepromAddress);
+  #endif
+  EEPROM.put(eepromAddress,heatingStruct->heatingChanged);
+}
+uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct){
+  int16_t eepromAddress = 0;
+  EEPROM.get(eepromAddress,heatingStruct->curentAverageTemperature);
+  eepromAddress += sizeof(float);
+  EEPROM.get(eepromAddress,heatingStruct->currentState);
+  eepromAddress += sizeof(uint8_t);
+  EEPROM.get(eepromAddress,heatingStruct->targetTemperature);
+  eepromAddress += sizeof(float);
+  EEPROM.get(eepromAddress,heatingStruct->targetTemperatureHiden);
+  eepromAddress += sizeof(float);
+  EEPROM.get(eepromAddress,heatingStruct->heatingCommand);
+  eepromAddress += sizeof(uint8_t);
+  EEPROM.get(eepromAddress,heatingStruct->heatingChanged);
+}
+
 /*############################## Work with MQTT ##############################*/
 
 /*
@@ -258,13 +320,15 @@ void callback(char* topic, byte* payload, uint16_t length){
  * реле, выключателей и т.д.
  */
 boolean reconnect(void) {
+  char tempChar[5];
   if (client.connect(DEVICE_NAME, mqtt_username, mqtt_password)) {
     //TODO Настроить загрузку начальных значений из EEPROM
     if (coldStart) {
       client.publish("/countryhouse/heating/Command", "OFF");
       client.publish("/countryhouse/heating/curentTemperature", "0.00");
-      client.publish("/countryhouse/heating/targetTemperature", "10.00");
-      client.publish("/countryhouse/heating/targetTemperatureHiden", "26.50");
+      dtostrf(heatingControl.targetTemperature, 5, 2, tempChar);
+      client.publish("/countryhouse/heating/targetTemperature", tempChar);
+      client.publish("/countryhouse/heating/targetTemperatureHiden", tempChar);
       coldStart = 0;
     }
     client.subscribe("/countryhouse/heating/State");

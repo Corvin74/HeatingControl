@@ -29,16 +29,22 @@ void Ds18b20::readScratchpad(){
 
   for ( byte i = 0; i < 9; i++) {           // we need 9 bytes
     _ds18b20Data[i] = ds.read();
-    Serial.print(_ds18b20Data[i], HEX);
-    Serial.print(" ");
+    #ifdef DEBUG
+      Serial.print(_ds18b20Data[i], HEX);
+      Serial.print(" ");
+    #endif DEBUG
   }
-  Serial.print(" - ");
+  #ifdef DEBUG
+    Serial.print(" - ");
+  #endif DEBUG
   if (63488 == ((_ds18b20Data[1] << 8)^0b11111000)) {
     /* При отрицательном значении ( S=1 ) сначала необходимо перевести
      * дополнительный код в прямой. Для этого надо инвертировать каждый
      * разряд двоичного кода и прибавить 1. А затем перевести в десятичный
      * и умножить на 0,0625 °C.
      */
+    int16_t raw = (_ds18b20Data[1] << 8) | _ds18b20Data[0];
+    raw = (raw ^ 0xffff) + 1;
   } else {
     int16_t raw = (_ds18b20Data[1] << 8) | _ds18b20Data[0];
 
