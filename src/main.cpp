@@ -36,21 +36,8 @@ void loop() {
     if (!client.publish("/countryhouse/ds18b20_2", dataTempChar)) {
       Serial.println(F("Publish sensor2 temperature failed"));
     }
-
     heatingControl.curentAverageTemperature = calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
-    if ((heatingControl.curentAverageTemperature - heatingControl.hysteresis) < (heatingControl.targetTemperature + heatingControl.hysteresis)) {
-      if (heatingControl.currentState == 0) {
-        client.publish("/countryhouse/heating/Command", "ON");
-        digitalWrite(RELAY1_PIN, LOW);
-        heatingControl.heatingChanged = 1;
-        heatingControl.currentState = 1;
-      }
-    } else if (heatingControl.currentState == 1) {
-      client.publish("/countryhouse/heating/Command", "OFF");
-      digitalWrite(RELAY1_PIN, HIGH);
-      heatingControl.heatingChanged = 1;
-      heatingControl.currentState = 0;
-    }
+    checkHeatingSensor1();
   }
   if (currentMillis - previousUpdateTime3 > TEMP3_UPDATE_TIME) {
     previousUpdateTime3 = currentMillis;
@@ -193,24 +180,24 @@ void initNetwork(void){
  * Возвращает среднее значение темаературы
  */
 float calcAvarage(float sensor1, float sensor2){
-  #ifdef DEBUG
-    Serial.print(F("sensor1 = "));
-    Serial.print(sensor1);
-    Serial.println(F(" °C"));
-    Serial.print(F("sensor2 = "));
-    Serial.print(sensor2);
-    Serial.println(F(" °C"));
-  #endif
+  // #ifdef DEBUG
+  //   Serial.print(F("sensor1 = "));
+  //   Serial.print(sensor1);
+  //   Serial.println(F(" °C"));
+  //   Serial.print(F("sensor2 = "));
+  //   Serial.print(sensor2);
+  //   Serial.println(F(" °C"));
+  // #endif
   char tempChar[5];
   float curAvgTemp = 0.00;
   if ((sensor1 > -200) && (sensor2 > -200)){
     curAvgTemp = (sensor1 + sensor2) / 2;
     dtostrf(curAvgTemp, 5, 2, tempChar);
-    #ifdef DEBUG
-      Serial.print(F("Average temperature = "));
-      Serial.print(curAvgTemp);
-      Serial.println(F(" °C"));
-    #endif
+    // #ifdef DEBUG
+    //   Serial.print(F("Average temperature = "));
+    //   Serial.print(curAvgTemp);
+    //   Serial.println(F(" °C"));
+    // #endif
     client.publish("/countryhouse/heating/curentTemperature", tempChar);
     return curAvgTemp;
   }
@@ -298,6 +285,60 @@ uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct){
   EEPROM.get(eepromAddress,heatingStruct->heatingChanged);
 
   return 0;
+}
+
+/*
+ * Проверяем необходимость включения котла по средней температуре
+ */
+void checkHeatingAVG(void){
+  heatingControl.curentAverageTemperature = calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
+  if ((heatingControl.curentAverageTemperature - (heatingControl.hysteresis / 2)) < (heatingControl.targetTemperature + (heatingControl.hysteresis / 2))) {
+    if (heatingControl.currentState == 0) {
+      heatingOFF();
+    }
+  } else {
+    if (heatingControl.currentState == 1) {
+      heatingON();
+    }
+  }
+}
+
+/*
+ * Проверяем необходимость включения котла по температуре первого датчика
+ */
+void checkHeatingSensor1(void){
+  float sensor = mySensor1.currentTemperature;
+  float target = heatingControl.targetTemperature;
+  float hysteresis = heatingControl.hysteresis;
+  if (sensor <= (target - hysteresis)) {
+    if (heatingControl.currentState == 0) {
+      heatingON();
+    }
+  }
+  if (sensor >= (target + hysteresis)) {
+    if (heatingControl.currentState == 1) {
+      heatingOFF();
+    }
+  }
+}
+
+/*
+ * Включаем котл если он выключен
+ */
+void heatingON(void){
+  client.publish("/countryhouse/heating/Command", "ON");
+  digitalWrite(RELAY1_PIN, LOW);
+  heatingControl.heatingChanged = 1;
+  heatingControl.currentState = 1;
+}
+/*
+ * Выключаем котл если он включен
+ */
+void heatingOFF(void){
+  client.publish("/countryhouse/heating/Command", "OFF");
+  digitalWrite(RELAY1_PIN, HIGH);
+  heatingControl.heatingChanged = 1;
+  heatingControl.currentState = 0;
 }
 
 /*############################## Work with MQTT ##############################*/
