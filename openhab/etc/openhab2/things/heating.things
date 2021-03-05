@@ -1,0 +1,10 @@
+Thing mqtt:topic:8eee4c03 "heatingControl" (mqtt:broker:fc845fd8) {
+  Channels:
+    Type switch : switch                  "Состояние котла"                     [ stateTopic="/countryhouse/heating/Command", commandTopic="/countryhouse/heating/Command", on="ON", off="OFF" ]
+    Type switch : heatingAuto             "Авторежим"                           [ stateTopic="/countryhouse/heating/Auto", commandTopic="/countryhouse/heating/Auto", on="ON", off="OFF" ]
+    Type number : curentTemperature       "Текущая средняя температура в доме"  [ stateTopic="/countryhouse/heating/curentTemperature", commandTopic="/countryhouse/heating/curentTemperature" ]
+    Type number : targetTemperature       "Текущая целевая температура"         [ stateTopic="/countryhouse/heating/targetTemperature", commandTopic="/countryhouse/heating/targetTemperature" ]
+    Type number : targetTemperatureHiden  "Уставка целевой температуры"         [ stateTopic="/countryhouse/heating/targetTemperatureHiden", commandTopic="/countryhouse/heating/targetTemperatureHiden" ]
+    Type number : hysteresis              "Гистерезис"                          [ stateTopic="/countryhouse/heating/hysteresis", commandTopic="/countryhouse/heating/hysteresis" ]
+}
+// vim: syntax=Xtend

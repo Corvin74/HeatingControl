@@ -1,0 +1,17 @@
+var Timer timer11 = null
+
+rule "change heating settings"
+
+when
+  Item targetTemperatureHiden changed
+  or
+  Item hysteresis changed
+then
+  if (timer11 !== null)
+    timer11.cancel()
+    timer11 = createTimer(now.plusSeconds(5)) [|
+    {
+      sendCommand(targetTemperature, targetTemperatureHiden.state.toString)
+    }
+  ]
+end

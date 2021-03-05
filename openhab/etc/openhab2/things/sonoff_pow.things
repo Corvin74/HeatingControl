@@ -1,0 +1,56 @@
+/*-============= SonoffPOWv2 =============-*/
+// SonoffPOW 1 test
+Thing mqtt:topic:sonoffPOWv2_1 "sonoffPOWv2_1Control" (mqtt:broker:fc845fd8) {
+  Channels:
+    Type switch : sonoffPOWv2_1           "Отопление в спальне"                 [ stateTopic="/countryhouse/sonoff/pow2_1/relay/0", commandTopic="/countryhouse/sonoff/pow2_1/relay/0/set", on="1", off="0" ]
+    Type string : SonoffPOWV2_1_app       "app"                                 [ stateTopic="/countryhouse/sonoff/pow2_1/app", commandTopic="/countryhouse/sonoff/pow2_1/app" ]
+    Type string : SonoffPOWV2_1_version  "version" [ stateTopic="/countryhouse/sonoff/pow2_1/version", commandTopic="/countryhouse/sonoff/pow2_1/version" ]
+    Type string : SonoffPOWV2_1_board  "board" [ stateTopic="/countryhouse/sonoff/pow2_1/board", commandTopic="/countryhouse/sonoff/pow2_1/board" ]
+    Type string : SonoffPOWV2_1_host  "host" [ stateTopic="/countryhouse/sonoff/pow2_1/host", commandTopic="/countryhouse/sonoff/pow2_1/host" ]
+    Type string : SonoffPOWV2_1_ssid  "ssid" [ stateTopic="/countryhouse/sonoff/pow2_1/ssid", commandTopic="/countryhouse/sonoff/pow2_1/ssid" ]
+    Type string : SonoffPOWV2_1_ip  "ip" [ stateTopic="/countryhouse/sonoff/pow2_1/ip", commandTopic="/countryhouse/sonoff/pow2_1/ip" ]
+    Type string : SonoffPOWV2_1_mac  "mac" [ stateTopic="/countryhouse/sonoff/pow2_1/mac", commandTopic="/countryhouse/sonoff/pow2_1/mac" ]
+    Type string : SonoffPOWV2_1_rssi  "rssi" [ stateTopic="/countryhouse/sonoff/pow2_1/rssi", commandTopic="/countryhouse/sonoff/pow2_1/rssi" ]
+    Type string : SonoffPOWV2_1_uptime  "uptime" [ stateTopic="/countryhouse/sonoff/pow2_1/uptime", commandTopic="/countryhouse/sonoff/pow2_1/uptime" ]
+    Type string : SonoffPOWV2_1_datetime  "datetime" [ stateTopic="/countryhouse/sonoff/pow2_1/datetime", commandTopic="/countryhouse/sonoff/pow2_1/datetime" ]
+    Type string : SonoffPOWV2_1_freeheap  "freeheap" [ stateTopic="/countryhouse/sonoff/pow2_1/freeheap", commandTopic="/countryhouse/sonoff/pow2_1/freeheap" ]
+    Type string : SonoffPOWV2_1_vcc  "vcc" [ stateTopic="/countryhouse/sonoff/pow2_1/vcc", commandTopic="/countryhouse/sonoff/pow2_1/vcc" ]
+    Type string : SonoffPOWV2_1_status  "status" [ stateTopic="/countryhouse/sonoff/pow2_1/status", commandTopic="/countryhouse/sonoff/pow2_1/status" ]
+    Type string : SonoffPOWV2_1_loadavg  "loadavg" [ stateTopic="/countryhouse/sonoff/pow2_1/loadavg", commandTopic="/countryhouse/sonoff/pow2_1/loadavg" ]
+    Type string : SonoffPOWV2_1_apparent  "apparent" [ stateTopic="/countryhouse/sonoff/pow2_1/apparent", commandTopic="/countryhouse/sonoff/pow2_1/apparent" ]
+    Type string : SonoffPOWV2_1_current  "current" [ stateTopic="/countryhouse/sonoff/pow2_1/current", commandTopic="/countryhouse/sonoff/pow2_1/current" ]
+    Type string : SonoffPOWV2_1_energy  "energy" [ stateTopic="/countryhouse/sonoff/pow2_1/energy", commandTopic="/countryhouse/sonoff/pow2_1/energy" ]
+    Type string : SonoffPOWV2_1_factor  "factor" [ stateTopic="/countryhouse/sonoff/pow2_1/factor", commandTopic="/countryhouse/sonoff/pow2_1/factor" ]
+    Type string : SonoffPOWV2_1_power  "power" [ stateTopic="/countryhouse/sonoff/pow2_1/power", commandTopic="/countryhouse/sonoff/pow2_1/power" ]
+    Type string : SonoffPOWV2_1_reactive  "reactive" [ stateTopic="/countryhouse/sonoff/pow2_1/reactive", commandTopic="/countryhouse/sonoff/pow2_1/reactive" ]
+    Type string : SonoffPOWV2_1_voltage  "voltage" [ stateTopic="/countryhouse/sonoff/pow2_1/voltage", commandTopic="/countryhouse/sonoff/pow2_1/voltage" ]
+}
+// SonoffPOW 2
+Thing mqtt:topic:sonoffPOWv2_2 "sonoffPOWv2_2Control" (mqtt:broker:fc845fd8) {
+  Channels:
+    Type switch : sonoffPOWv2_2           "Отопление в детской"                 [ stateTopic="/countryhouse/sonoff/pow2_2/relay/0", commandTopic="/countryhouse/sonoff/pow2_2/relay/0/set", on="1", off="0" ]
+    // Type string : data       "data"                                 [ stateTopic="/countryhouse/sonoff/pow2_2/data" ]
+    Type string : SonoffPOWV2_2_app       "app"                                 [ stateTopic="/countryhouse/sonoff/pow2_2/app", commandTopic="/countryhouse/sonoff/pow2_2/app" ]
+    Type string : SonoffPOWV2_2_version  "version" [ stateTopic="/countryhouse/sonoff/pow2_2/version", commandTopic="/countryhouse/sonoff/pow2_2/version" ]
+    Type string : SonoffPOWV2_2_board  "board" [ stateTopic="/countryhouse/sonoff/pow2_2/board", commandTopic="/countryhouse/sonoff/pow2_2/board" ]
+    Type string : SonoffPOWV2_2_host  "host" [ stateTopic="/countryhouse/sonoff/pow2_2/host", commandTopic="/countryhouse/sonoff/pow2_2/host" ]
+    Type string : SonoffPOWV2_2_ssid  "ssid" [ stateTopic="/countryhouse/sonoff/pow2_2/ssid", commandTopic="/countryhouse/sonoff/pow2_2/ssid" ]
+    Type string : SonoffPOWV2_2_ip  "ip" [ stateTopic="/countryhouse/sonoff/pow2_2/ip", commandTopic="/countryhouse/sonoff/pow2_2/ip" ]
+    Type string : SonoffPOWV2_2_mac  "mac" [ stateTopic="/countryhouse/sonoff/pow2_2/mac", commandTopic="/countryhouse/sonoff/pow2_2/mac" ]
+    Type string : SonoffPOWV2_2_rssi  "rssi" [ stateTopic="/countryhouse/sonoff/pow2_2/rssi", commandTopic="/countryhouse/sonoff/pow2_2/rssi" ]
+    Type string : SonoffPOWV2_2_uptime  "uptime" [ stateTopic="/countryhouse/sonoff/pow2_2/uptime", commandTopic="/countryhouse/sonoff/pow2_2/uptime" ]
+    Type string : SonoffPOWV2_2_datetime  "datetime" [ stateTopic="/countryhouse/sonoff/pow2_2/datetime", commandTopic="/countryhouse/sonoff/pow2_2/datetime" ]
+    Type string : SonoffPOWV2_2_freeheap  "freeheap" [ stateTopic="/countryhouse/sonoff/pow2_2/freeheap", commandTopic="/countryhouse/sonoff/pow2_2/freeheap" ]
+    Type string : SonoffPOWV2_2_vcc  "vcc" [ stateTopic="/countryhouse/sonoff/pow2_2/vcc", commandTopic="/countryhouse/sonoff/pow2_2/vcc" ]
+    Type string : SonoffPOWV2_2_status  "status" [ stateTopic="/countryhouse/sonoff/pow2_2/status", commandTopic="/countryhouse/sonoff/pow2_2/status" ]
+    Type string : SonoffPOWV2_2_loadavg  "loadavg" [ stateTopic="/countryhouse/sonoff/pow2_2/loadavg", commandTopic="/countryhouse/sonoff/pow2_2/loadavg" ]
+    Type string : SonoffPOWV2_2_apparent  "apparent" [ stateTopic="/countryhouse/sonoff/pow2_2/apparent", commandTopic="/countryhouse/sonoff/pow2_2/apparent" ]
+    Type string : SonoffPOWV2_2_current  "current" [ stateTopic="/countryhouse/sonoff/pow2_2/current", commandTopic="/countryhouse/sonoff/pow2_2/current" ]
+    Type string : SonoffPOWV2_2_energy  "energy" [ stateTopic="/countryhouse/sonoff/pow2_2/energy", commandTopic="/countryhouse/sonoff/pow2_2/energy" ]
+    Type string : SonoffPOWV2_2_factor  "factor" [ stateTopic="/countryhouse/sonoff/pow2_2/factor", commandTopic="/countryhouse/sonoff/pow2_2/factor" ]
+    Type string : SonoffPOWV2_2_power  "power" [ stateTopic="/countryhouse/sonoff/pow2_2/power", commandTopic="/countryhouse/sonoff/pow2_2/power" ]
+    Type string : SonoffPOWV2_2_reactive  "reactive" [ stateTopic="/countryhouse/sonoff/pow2_2/reactive", commandTopic="/countryhouse/sonoff/pow2_2/reactive" ]
+    Type string : SonoffPOWV2_2_voltage  "voltage" [ stateTopic="/countryhouse/sonoff/pow2_2/voltage", commandTopic="/countryhouse/sonoff/pow2_2/voltage" ]
+    // Type string : SonoffPOWV2_2_voltage  "voltage" [ stateTopic="/countryhouse/sonoff/pow2_2/data" ]
+}
+// vim: syntax=Xtend

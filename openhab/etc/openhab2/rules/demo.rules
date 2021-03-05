@@ -1,0 +1,19 @@
+// rule "Fan control"
+// when
+//     Item LobbyDS18B20 changed
+// then
+//   if (LobbyDS18B20.state >= 28.5) sendCommand(Relay2, "ON")
+//   else if (LobbyDS18B20.state <= 27.5 && Relay2.state == ON) sendCommand(Relay2, "OFF")
+// end
+
+// var Number conversion
+// var String get_SonoffPOWV2_1_vcc
+// rule "Vcc"
+// when
+//     Item SonoffPOWV2_1_vcc changed
+// then
+//   // get_SonoffPOWV2_1_vcc = SonoffPOWV2_1_vcc.state.toString();
+//   // conversion = Double.parseDouble(get_SonoffPOWV2_1_vcc) / 100;
+//   SonoffPOWV2_1_vcc_int.postUpdate((Float::parseFloat(String::format("%s",SonoffPOWV2_1_vcc.state).replace(',','.')))/1000);
+//   // SonoffPOWV2_1_vcc.state = (SonoffPOWV2_1_vcc.state as DecimalType) / 100
+// end

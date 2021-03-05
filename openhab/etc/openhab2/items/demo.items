@@ -1,0 +1,17 @@
+/* Number SerialTemperature "SerialTemperature [%.1f °C]"      <temperature> { serial="/dev/ttyACM0@9600,REGEX(Temperature = ([0-9.]*))" }
+Number SerialPressure    "SerialPressure [%.1f мм рт. ст.]" <pressure> { serial="/dev/ttyACM0@9600,REGEX(Pressure = ([0-9.]*))" } */
+
+Switch   SensorButton  "Сенсорная кнопка"  {channel="mqtt:topic:0100c282:SensorButton"}
+
+Switch Relay1 "Реле 1"    {channel="mqtt:topic:0100c282:Relay1"}
+Switch Relay2 "Реле 2"    {channel="mqtt:topic:0100c282:Relay2"}
+Dimmer Led    "LED Лента" <light> {channel="mqtt:topic:0100c282:Led"}
+Number LobbyDS18B20	"Температура с первого датчика [%.2f °C]"   <temperature>   {channel="mqtt:topic:0100c282:LobbyDS18B20"}
+Number LobbyDS18B20_2	"Температура со второго датчика [%.2f °C]"   <temperature>   {channel="mqtt:topic:0100c282:LobbyDS18B20_2"}
+Number LobbyDS18B20_3	"Температура с датчика на кухне [%.2f °C]"   <temperature>   {channel="mqtt:topic:0100c282:LobbyDS18B20_3"}
+
+Dimmer LedStrip "LED Лента, пошаговое управление" <light> {channel="mqtt:topic:0100c282:Led"}
+
+
+
+/* Number Temperature_FF_Bath      "Bath [%.1f °C]"            <temperature>   (Temperature, FF_Bath)      ["Temperature", "Measurement"] */

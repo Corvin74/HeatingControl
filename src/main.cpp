@@ -84,6 +84,20 @@ void loop() {
     heatingControl.targetTemperature = messageMQTT.payload.toFloat();
     saveSettingsToEEPROM(&heatingControl);
   }
+  if (messageMQTT.topic == "/countryhouse/heating/hysteresis") {
+    #ifdef DEBUG
+      Serial.print(F("Current hysteresis = "));
+      Serial.print(heatingControl.hysteresis);
+      Serial.println(" °C");
+    #endif
+    #ifdef DEBUG
+      Serial.print(F("Current hysteresis from topic = "));
+      Serial.print(messageMQTT.payload.toFloat());
+      Serial.println(" °C");
+    #endif
+    heatingControl.hysteresis = messageMQTT.payload.toFloat();
+    saveSettingsToEEPROM(&heatingControl);
+  }
   if (messageMQTT.topic == "/countryhouse/heating/Auto") {
     #ifdef DEBUG
       Serial.print(F("Current state from topic 'Auto' = "));
@@ -310,6 +324,15 @@ void checkHeatingSensor1(void){
   float sensor = mySensor1.currentTemperature;
   float target = heatingControl.targetTemperature;
   float hysteresis = heatingControl.hysteresis;
+  // #ifdef DEBUG
+  //   Serial.println(F("checkHeatingSensor1"));
+  //   Serial.print(F("sensor = "));
+  //   Serial.println(sensor);
+  //   Serial.print(F("target = "));
+  //   Serial.println(target);
+  //   Serial.print(F("hysteresis = "));
+  //   Serial.println(hysteresis);
+  // #endif
   if (sensor <= (target - hysteresis)) {
     if (heatingControl.currentState == 0) {
       heatingON();
@@ -405,6 +428,10 @@ boolean reconnect(void) {
     client.subscribe("/countryhouse/heating/targetTemperatureHiden");
     #ifdef DEBUG
       Serial.println(F("Connected to: /countryhouse/heating/targetTemperatureHiden"));
+    #endif
+    client.subscribe("/countryhouse/heating/hysteresis");
+    #ifdef DEBUG
+      Serial.println(F("Connected to: /countryhouse/heating/hysteresis"));
     #endif
   }
   return client.connected();

@@ -1,0 +1,53 @@
+/*-============= SonoffPOWv2 =============-*/
+// SonoffPOW 1
+Switch SonoffPOWV2_1    "Отопление в спальне"   {channel="mqtt:topic:sonoffPOWv2_1:sonoffPOWv2_1"}
+//TELE
+String SonoffPOWV2_1_app       "app"      {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_app"}
+String SonoffPOWV2_1_version   "version"  {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_version"}
+String SonoffPOWV2_1_board     "board"    {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_board"}
+String SonoffPOWV2_1_host      "host"     {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_host"}
+String SonoffPOWV2_1_ssid      "ssid"     {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_ssid"}
+String SonoffPOWV2_1_ip        "ip"       {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_ip"}
+String SonoffPOWV2_1_mac       "mac"      {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_mac"}
+String SonoffPOWV2_1_rssi      "rssi"     {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_rssi"}
+String SonoffPOWV2_1_uptime    "uptime"   {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_uptime"}
+String SonoffPOWV2_1_datetime  "datetime" {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_datetime"}
+String SonoffPOWV2_1_freeheap  "freeheap" {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_freeheap"}
+String SonoffPOWV2_1_vcc       "vcc"      {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_vcc"}
+String SonoffPOWV2_1_status    "status"   {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_status"}
+String SonoffPOWV2_1_loadavg   "loadavg"  {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_loadavg"}  
+String SonoffPOWV2_1_apparent  "apparent" {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_apparent"}
+String SonoffPOWV2_1_current   "current"  {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_current"}
+String SonoffPOWV2_1_energy    "energy"   {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_energy"}
+String SonoffPOWV2_1_factor    "factor"   {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_factor"}
+String SonoffPOWV2_1_power     "power"    {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_power"}
+String SonoffPOWV2_1_reactive  "reactive" {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_reactive"}
+String SonoffPOWV2_1_voltage   "voltage"  {channel="mqtt:topic:sonoffPOWv2_1:SonoffPOWV2_1_voltage"}  
+
+// SonoffPOW 2
+Switch SonoffPOWV2_2    "Отопление в детской"   {channel="mqtt:topic:sonoffPOWv2_2:sonoffPOWv2_2"}
+//TELE
+
+// String SonoffPOWV2_2_app       "app [JSONPATH($.app):%s]"
+String SonoffPOWV2_2_app       "app"      {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_app"}
+String SonoffPOWV2_2_version   "version"  {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_version"}
+String SonoffPOWV2_2_board     "board"    {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_board"}
+String SonoffPOWV2_2_host      "host"     {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_host"}
+String SonoffPOWV2_2_ssid      "ssid"     {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_ssid"}
+String SonoffPOWV2_2_ip        "ip"       {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_ip"}
+String SonoffPOWV2_2_mac       "mac"      {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_mac"}
+String SonoffPOWV2_2_rssi      "rssi"     {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_rssi"}
+String SonoffPOWV2_2_uptime    "uptime"   {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_uptime"}
+String SonoffPOWV2_2_datetime  "datetime" {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_datetime"}
+String SonoffPOWV2_2_freeheap  "freeheap" {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_freeheap"}
+String SonoffPOWV2_2_vcc       "vcc"      {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_vcc"}
+String SonoffPOWV2_2_status    "status"   {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_status"}
+String SonoffPOWV2_2_loadavg   "loadavg"  {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_loadavg"}  
+String SonoffPOWV2_2_apparent  "apparent" {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_apparent"}
+String SonoffPOWV2_2_current   "current"  {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_current"}
+String SonoffPOWV2_2_energy    "energy"   {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_energy"}
+String SonoffPOWV2_2_factor    "factor"   {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_factor"}
+String SonoffPOWV2_2_power     "power"    {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_power"}
+String SonoffPOWV2_2_reactive  "reactive" {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_reactive"}
+String SonoffPOWV2_2_voltage   "voltage"  {channel="mqtt:topic:sonoffPOWv2_2:SonoffPOWV2_2_voltage"}  
+// String SonoffPOWV2_2_voltage   "voltage [JSONPATH($.voltage):%s]"

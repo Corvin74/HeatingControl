@@ -1,0 +1,49 @@
+sitemap demo label="Main Menu" {
+/*  Frame {
+    Text item=SerialTemperature
+    Text item=SerialPressure
+  }
+*/
+  Frame {
+    Switch       item=Relay1  label="Реле 1"
+    Switch       item=Relay2  label="Реле 2"
+    Slider       item=Led     label="LED Лента"
+    Switch       item=SensorButton  label="Сенсорная кнопка"
+    Text		 item=LobbyDS18B20 label="Температура с первого датчика [%.2f °C]"
+    Text		 item=LobbyDS18B20_2 label="Температура со второго датчика [%.2f °C]"
+  }
+  Frame {
+	Setpoint item=LedStrip label="Яркость [%d]" icon="light" minValue=0 maxValue=100 step=5
+  }
+  Text label="SonoffPOWv2" icon="poweroutlet" {			
+    Frame label="" {
+      Switch	item=SonoffPOWV2_1 icon="wallswitch" 
+      Text label="info"                 icon="settings" {
+        Frame label="Info" {
+          Text 	item=SonoffPOWV2_1_app       icon="keyring"    
+          Text 	item=SonoffPOWV2_1_version   icon="keyring"
+          Text 	item=SonoffPOWV2_1_board     icon="settings"
+          Text	item=SonoffPOWV2_1_host      icon="settings"
+          Text 	item=SonoffPOWV2_1_ssid      icon="network"
+          Text 	item=SonoffPOWV2_1_ip        icon="network"
+          Text 	item=SonoffPOWV2_1_mac       icon="network"
+          Text 	item=SonoffPOWV2_1_rssi      icon="qualityofservice"
+          Text 	item=SonoffPOWV2_1_uptime    icon="flowpipe"
+          Text 	item=SonoffPOWV2_1_datetime  icon="time"
+          Text 	item=SonoffPOWV2_1_freeheap  icon="heating"
+          Text 	item=SonoffPOWV2_1_vcc       icon="energy"
+          // Text 	item=SonoffPOWV2_1_vcc_int   icon="energy"
+          Text 	item=SonoffPOWV2_1_status    icon="settings"
+          Text 	item=SonoffPOWV2_1_loadavg   icon="settings"
+          Text 	item=SonoffPOWV2_1_apparent  icon="settings"
+          Text 	item=SonoffPOWV2_1_current   icon="energy"
+          Text 	item=SonoffPOWV2_1_energy    icon="energy"
+          Text 	item=SonoffPOWV2_1_factor    icon="settings"
+          Text 	item=SonoffPOWV2_1_power     icon="energy"
+          Text 	item=SonoffPOWV2_1_reactive  icon="energy"
+          Text 	item=SonoffPOWV2_1_voltage   icon="energy"
+        }
+      }	
+    }
+  }
+}

@@ -1,0 +1,82 @@
+sitemap countryhouse label="Дача" {
+  Frame label="Температура в доме" {
+    Text item=LobbyDS18B20 label="Температура с датчика в корридоре [%.2f °C]"
+    Text item=LobbyDS18B20_2 label="Температура с датчика в зале [%.2f °C]"
+    Text item=LobbyDS18B20_3 label="Температура с датчика на кухне [%.2f °C]"
+  }
+  Frame label="Управление отоплением" {
+    // Text item=curentTemperature icon="temperature" valuecolor=[>25="orange",>15="green",>5="orange",<=5="blue"]
+    Text item=targetTemperature label="Текущая целевая температура [%.2f °C]" icon="temperature" valuecolor=[>30="red",>25="yellow",>18="green",>5="blue",<=10="orange"]
+    Switch item=heatingState
+    Switch item=heatingAuto
+    Switch	item=SonoffPOWV2_1 icon="wallswitch"
+    Switch	item=SonoffPOWV2_2 icon="wallswitch"
+  }
+  Text label="Настройка отопления" icon="settings"{
+    Frame label="" {
+      Setpoint item=targetTemperatureHiden label="Желаемая температура в помещении [%.2f °C]" icon="temperature" valuecolor=[>30="red",>25="yellow",>18="green",>5="blue",<=10="orange"] minValue=5 maxValue=30 step=0.5
+      Text item=targetTemperature label="Текущая целевая температура [%.2f °C]" icon="temperature" valuecolor=[>30="red",>25="yellow",>18="green",>5="blue",<=10="orange"]
+      Setpoint item=hysteresis label="Гистерезис [%.2f °C]" icon="settings" minValue=0.5 maxValue=10 step=0.25
+    }
+  }
+  Text label="Отопление в спальне" icon="poweroutlet" {			
+    Frame label="Отопление в спальне" {
+      Switch	item=SonoffPOWV2_1 icon="wallswitch" 
+      Text label="Info"                 icon="settings" {
+        Frame label="Info" {
+          Text 	item=SonoffPOWV2_1_app       icon="keyring"    
+          Text 	item=SonoffPOWV2_1_version   icon="keyring"
+          Text 	item=SonoffPOWV2_1_board     icon="settings"
+          Text	item=SonoffPOWV2_1_host      icon="settings"
+          Text 	item=SonoffPOWV2_1_ssid      icon="network"
+          Text 	item=SonoffPOWV2_1_ip        icon="network"
+          Text 	item=SonoffPOWV2_1_mac       icon="network"
+          Text 	item=SonoffPOWV2_1_rssi      icon="qualityofservice"
+          Text 	item=SonoffPOWV2_1_uptime    icon="flowpipe"
+          Text 	item=SonoffPOWV2_1_datetime  icon="time"
+          Text 	item=SonoffPOWV2_1_freeheap  icon="heating"
+          Text 	item=SonoffPOWV2_1_vcc       icon="energy"
+          Text 	item=SonoffPOWV2_1_status    icon="settings"
+          Text 	item=SonoffPOWV2_1_loadavg   icon="settings"
+          Text 	item=SonoffPOWV2_1_apparent  icon="settings"
+          Text 	item=SonoffPOWV2_1_current   icon="energy"
+          Text 	item=SonoffPOWV2_1_energy    icon="energy"
+          Text 	item=SonoffPOWV2_1_factor    icon="settings"
+          Text 	item=SonoffPOWV2_1_power     icon="energy"
+          Text 	item=SonoffPOWV2_1_reactive  icon="energy"
+          Text 	item=SonoffPOWV2_1_voltage   icon="energy"
+        }
+      }	
+    }
+  }
+  Text label="Отопление в детской" icon="poweroutlet" {			
+    Frame label="Отопление в детской" {
+      Switch	item=SonoffPOWV2_2 icon="wallswitch"
+      Text label="Info"                 icon="settings" {
+        Frame label="Info" {
+          Text 	item=SonoffPOWV2_2_app       icon="keyring"    
+          Text 	item=SonoffPOWV2_2_version   icon="keyring"
+          Text 	item=SonoffPOWV2_2_board     icon="settings"
+          Text	item=SonoffPOWV2_2_host      icon="settings"
+          Text 	item=SonoffPOWV2_2_ssid      icon="network"
+          Text 	item=SonoffPOWV2_2_ip        icon="network"
+          Text 	item=SonoffPOWV2_2_mac       icon="network"
+          Text 	item=SonoffPOWV2_2_rssi      icon="qualityofservice"
+          Text 	item=SonoffPOWV2_2_uptime    icon="flowpipe"
+          Text 	item=SonoffPOWV2_2_datetime  icon="time"
+          Text 	item=SonoffPOWV2_2_freeheap  icon="heating"
+          Text 	item=SonoffPOWV2_2_vcc       icon="energy"
+          Text 	item=SonoffPOWV2_2_status    icon="settings"
+          Text 	item=SonoffPOWV2_2_loadavg   icon="settings"
+          Text 	item=SonoffPOWV2_2_apparent  icon="settings"
+          Text 	item=SonoffPOWV2_2_current   icon="energy"
+          Text 	item=SonoffPOWV2_2_energy    icon="energy"
+          Text 	item=SonoffPOWV2_2_factor    icon="settings"
+          Text 	item=SonoffPOWV2_2_power     icon="energy"
+          Text 	item=SonoffPOWV2_2_reactive  icon="energy"
+          Text 	item=SonoffPOWV2_2_voltage   icon="energy"
+        }
+      }	
+    }
+  }
+}

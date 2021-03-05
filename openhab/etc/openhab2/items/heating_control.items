@@ -1,0 +1,8 @@
+Number   curentTemperature   "Текущая средняя температура в доме [%.2f °C]"   <temperature>   {channel="mqtt:topic:8eee4c03:curentTemperature"}
+Switch   heatingState   "Состояние котла"   <light>   (Heating_Grupp)     {channel="mqtt:topic:8eee4c03:switch"}
+Switch   heatingAuto   "Авторежим" <light>   (Heating_Grupp)     {channel="mqtt:topic:8eee4c03:heatingAuto"}
+Number   targetTemperature   "Текущая целевая температура [%.2f °C]"   <temperature>   {channel="mqtt:topic:8eee4c03:targetTemperature"}
+Number   targetTemperatureHiden   "Уставка целевой температуры [%.2f °C]"   <temperature>   {channel="mqtt:topic:8eee4c03:targetTemperatureHiden"}
+String   heatingCommand   "Отопление для команд [%.2f C]"   <temperature>   {channel="mqtt:topic:8eee4c03:heatingCommand"}
+
+Number   hysteresis   "Гистерезис [%.2f °C]"   <settings>   {channel="mqtt:topic:8eee4c03:hysteresis"}
