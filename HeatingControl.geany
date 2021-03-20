@@ -28,9 +28,10 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=0
+current_page=2
 FILE_NAME_0=282;C++;0;EUTF-8;1;1;0;%2Fhome%2Fcorvin%2Fprojects%2FHeatingControl%2Fsrc%2Fmain.h;0;4
 FILE_NAME_1=2697;C++;0;EUTF-8;1;1;0;%2Fhome%2Fcorvin%2Fprojects%2FHeatingControl%2Fsrc%2Fmain.cpp;0;4
+FILE_NAME_2=47;Conf;0;EUTF-8;0;1;0;%2Fmedia%2FNetwork%2FAll%2FScan%2FRemoteApp%2Fnethasp.ini;0;2
 
 [VTE]
 last_dir=/home/corvin/projects/HeatingControl/src
