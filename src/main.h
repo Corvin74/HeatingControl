@@ -26,13 +26,13 @@
 
 // Для инициализации IP адреса по DHCP
 #ifndef DHCP
-  #define GET_DHCP
+  // #define GET_DHCP
 #endif
 // Для инициализации статического IP адреса в зависимости от положения
 #ifndef STATIC
   // #define GET_STATIC_HOME
   // #define GET_STATIC_WORK
-  // #define GET_STATIC_COUNTRYHOUSE
+  #define GET_STATIC_COUNTRYHOUSE
 #endif
 
 // Название устройства при подключении к MQTT
