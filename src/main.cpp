@@ -28,6 +28,8 @@ void loop() {
     if (!client.publish("/countryhouse/ds18b20_1", dataTempChar)) {
       Serial.println(F("Publish sensor1 temperature failed"));
     }
+    Serial.print(F("Sensor4 temperature = "));
+    Serial.println(dataTempChar);
   }
 
   if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {

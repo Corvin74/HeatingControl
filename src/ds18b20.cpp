@@ -1,6 +1,11 @@
 #include "ds18b20.h"
 
-OneWire  ds(ONEWIRE_BUS);
+// OneWire  ds(ONEWIRE_BUS);
+// OneWire  ds1(ONEWIRE_BUS_THERMO_SENSOR1);
+// OneWire  ds2(ONEWIRE_BUS_THERMO_SENSOR2);
+// OneWire  ds3(ONEWIRE_BUS_THERMO_SENSOR3);
+OneWire  ds4(ONEWIRE_BUS_THERMO_SENSOR4);
+OneWire  ds5(ONEWIRE_BUS_THERMO_SENSOR5);
 
 Ds18b20::Ds18b20(uint8_t *sensorAddress, byte length, long updateInterval = 10000) {
   setSensorAddress(sensorAddress, length);
@@ -16,19 +21,19 @@ void Ds18b20::setSensorAddress(uint8_t *address, byte length) {
 void Ds18b20::setUpdateInterval(long updateInterval) {
   _updateInterval = updateInterval;
 }
-void Ds18b20::startConversion() {
-  ds.reset();
-  ds.select(_address);
-  ds.write(0x44, 1);
+void Ds18b20::startConversion(OneWire *ds) {
+  ds->reset();
+  ds->select(_address);
+  ds->write(0x44, 1);
 }
 
-void Ds18b20::readScratchpad(){
-  ds.reset();
-  ds.select(_address);
-  ds.write(0xBE);         // Read Scratchpad
+void Ds18b20::readScratchpad(OneWire *ds){
+  ds->reset();
+  ds->select(_address);
+  ds->write(0xBE);         // Read Scratchpad
 
   for ( byte i = 0; i < 9; i++) {           // we need 9 bytes
-    _ds18b20Data[i] = ds.read();
+    _ds18b20Data[i] = ds->read();
     #ifdef DEBUG
       Serial.print(_ds18b20Data[i], HEX);
       Serial.print(" ");
@@ -59,9 +64,9 @@ void Ds18b20::readScratchpad(){
   }
 }
 
-float Ds18b20::publishSensor(void) {
-  Ds18b20::readScratchpad();
-  Ds18b20::startConversion();
+float Ds18b20::publishSensor(OneWire *ds) {
+  Ds18b20::readScratchpad(ds);
+  Ds18b20::startConversion(ds);
   #ifdef DEBUG
     Serial.print(F("Sensor1 = "));
     Serial.print( Ds18b20::currentTemperature );
