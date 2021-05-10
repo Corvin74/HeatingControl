@@ -135,6 +135,11 @@ Ds18b20 mySensor3(ds18b20Sensor3, sizeof(ds18b20Sensor3), TEMP3_UPDATE_TIME);
 float dsSensor1;
 float dsSensor2;
 float dsSensor3;
+float TSensor1;
+float TSensor2;
+float TSensor3;
+float TSensor4;
+float TSensor5;
 // Переменные для хранения времени последнего обновления данных
 long previousUpdateTime1;
 long previousUpdateTime2;
