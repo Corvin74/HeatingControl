@@ -13,6 +13,7 @@
 #include <Ethernet2.h>
 #include <PubSubClient.h>
 #include <EEPROM.h>
+#include <LiquidCrystal_I2C.h>
 #include "ds18b20.h"
 /**************************************************************/
 /* Настройка дополнительных параметров: отладка, сеть, etc... */
