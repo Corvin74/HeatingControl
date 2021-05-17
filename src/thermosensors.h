@@ -15,24 +15,24 @@
 #endif
 // Определяем к каким входам платы подключены датчики DS18B20
 #ifndef ONEWIRE_BUS_GATE1
-  // #define ONEWIRE_BUS_GATE1
-  #undef ONEWIRE_BUS_GATE1
+  #define ONEWIRE_BUS_GATE1
+  // #undef ONEWIRE_BUS_GATE1
 #endif
 #ifndef ONEWIRE_BUS_GATE2
-  // #define ONEWIRE_BUS_GATE2
-  #undef ONEWIRE_BUS_GATE2
+  #define ONEWIRE_BUS_GATE2
+  // #undef ONEWIRE_BUS_GATE2
 #endif
 #ifndef ONEWIRE_BUS_GATE3
-  // #define ONEWIRE_BUS_GATE3
-  #undef ONEWIRE_BUS_GATE3
+  #define ONEWIRE_BUS_GATE3
+  // #undef ONEWIRE_BUS_GATE3
 #endif
 #ifndef ONEWIRE_BUS_GATE4
   #define ONEWIRE_BUS_GATE4
   // #undef ONEWIRE_BUS_GATE4
 #endif
 #ifndef ONEWIRE_BUS_GATE5
-  #define ONEWIRE_BUS_GATE5
-  // #undef ONEWIRE_BUS_GATE5
+  // #define ONEWIRE_BUS_GATE5
+  #undef ONEWIRE_BUS_GATE5
 #endif
 
 #ifdef DS18B20
@@ -52,7 +52,7 @@
 #endif
 // Если используются датчики DS18B20 задаем номера пинов на которых они работают
 #ifdef ONEWIRE_BUS_GATE1
-  #define DS18B20_GATE1_PIN A0				// Номер пина Arduino с подключенным датчиком
+  #define DS18B20_GATE1_PIN PC0				// Номер пина Arduino с подключенным датчиком A0
   #define DS18B20_GATE1_POWER 0				// 0 – питание от внешнего источника, 1 – "паразитное" питание.
 #endif
 #ifdef ONEWIRE_BUS_GATE2
@@ -74,24 +74,24 @@
 
 // Определяем к каким входам платы подключены датчики LM35
 #ifndef LM35_GATE1
-  #define LM35_GATE1
-  // #undef LM35_GATE1
+  // #define LM35_GATE1
+  #undef LM35_GATE1
 #endif
 #ifndef LM35_GATE2
-  #define LM35_GATE2
-  // #undef LM35_GATE2
+  // #define LM35_GATE2
+  #undef LM35_GATE2
 #endif
 #ifndef LM35_GATE3
-  #define LM35_GATE3
-  // #undef LM35_GATE3
+  // #define LM35_GATE3
+  #undef LM35_GATE3
 #endif
 #ifndef LM35_GATE4
   // #define LM35_GATE4
   #undef LM35_GATE4
 #endif
 #ifndef LM35_GATE5
-  // #define LM35_GATE5
-  #undef LM35_GATE5
+  #define LM35_GATE5
+  // #undef LM35_GATE5
 #endif
 
 // Если используются датчики LM35 задаем номера пинов на которых они работают

@@ -32,6 +32,6 @@ int8_t ds18b20GetResultMeasurement(OneWire *ds, uint8_t gate_power){
   ds->read_bytes(dsTempBuf, 9);
   if ( OneWire::crc8(dsTempBuf, 8) == dsTempBuf[8] ) {
     measurementResult = (float)((int)dsTempBuf[0] | (((int)dsTempBuf[1]) << 8)) * 0.0625 + 0.03125;
-    return ((int)measurementResult*100)
+    return ((int)measurementResult*100);
   }
 }

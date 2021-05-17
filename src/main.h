@@ -14,7 +14,8 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include <LiquidCrystal_I2C.h>
-#include "ds18b20.h"
+#include "thermosensors.h"
+
 /**************************************************************/
 /* Настройка дополнительных параметров: отладка, сеть, etc... */
 /**************************************************************/
@@ -28,12 +29,18 @@
 // Для инициализации IP адреса по DHCP
 #ifndef DHCP
   // #define GET_DHCP
+  #undef GET_DHCP
 #endif
 // Для инициализации статического IP адреса в зависимости от положения
 #ifndef STATIC
   // #define GET_STATIC_HOME
-  // #define GET_STATIC_WORK
-  #define GET_STATIC_COUNTRYHOUSE
+  #undef GET_STATIC_HOME
+
+  #define GET_STATIC_WORK
+  // #undef GET_STATIC_WORK
+
+  // #define GET_STATIC_COUNTRYHOUSE
+  #undef GET_STATIC_COUNTRYHOUSE
 #endif
 
 // Название устройства при подключении к MQTT
@@ -129,9 +136,9 @@ uint8_t ds18b20Sensor7[8] = { 0x28, 0xB3, 0x0B, 0x43, 0x98, 0x01, 0x02, 0x2D };
 uint8_t ds18b20Sensor8[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
 uint8_t ds18b20Sensor9[8] = { 0x28, 0x86, 0x01, 0x43, 0x98, 0x0E, 0x00, 0x32 };
 // Объекты датчиков температуры
-Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), TEMP1_UPDATE_TIME);
-Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), TEMP2_UPDATE_TIME);
-Ds18b20 mySensor3(ds18b20Sensor3, sizeof(ds18b20Sensor3), TEMP3_UPDATE_TIME);
+// Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), TEMP1_UPDATE_TIME);
+// Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), TEMP2_UPDATE_TIME);
+// Ds18b20 mySensor3(ds18b20Sensor3, sizeof(ds18b20Sensor3), TEMP3_UPDATE_TIME);
 // Текущие данные с датчиков температуры
 float dsSensor1;
 float dsSensor2;
