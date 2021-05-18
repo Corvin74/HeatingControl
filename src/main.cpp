@@ -1,9 +1,38 @@
 #include "main.h"
 
 void setup() {
-  initializeVariables();
-  initializeThePeriphery();
+  #ifdef LCD_ON
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(3,0);
+    lcd.print("HeatingControl");
+    lcd.setCursor(3,1);
+    lcd.print("DIP Ver: 0.0.2");
+  #endif
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init serial...      ");
+    delay(100);
+  #endif
   initSerial();
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init variables...   ");
+    delay(100);
+  #endif
+  initializeVariables();
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init periphery...   ");
+    delay(100);
+  #endif
+  initializeThePeriphery();
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init network...     ");
+    delay(100);
+    lcd.noBacklight();
+  #endif
   initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
   // mySensor1.startConversion();

@@ -13,7 +13,6 @@
 #include <Ethernet2.h>
 #include <PubSubClient.h>
 #include <EEPROM.h>
-#include <LiquidCrystal_I2C.h>
 #include "thermosensors.h"
 
 /**************************************************************/
@@ -24,6 +23,12 @@
 #ifndef DEBUG
   #define DEBUG
   // #undef DEBUG
+#endif
+
+// Признак подключения LCD экрана
+#ifndef LCD_ON
+  #define LCD_ON
+  // #undef LCD_ON
 #endif
 
 // Для инициализации IP адреса по DHCP
@@ -55,6 +60,12 @@
 #define LED_PIN 9                 // Пин 9 с подключенным контрольным светодиодом
 #define RELAY1_PIN 7              // Пин 7 для реле 1
 #define RELAY2_PIN 8              // Пин 8 для реле 2
+
+#ifdef LCD_ON
+  #include <LiquidCrystal_I2C.h>
+  LiquidCrystal_I2C lcd(0x27,20,4);
+#endif
+
 // -------------------------------------- END - Пины Arduino ------------------------------------------------
 
 /***************************************************************/
