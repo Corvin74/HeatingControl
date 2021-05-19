@@ -51,7 +51,7 @@ void loop() {
   char dataTempChar[5];
   unsigned long currentMillis = millis();
 
-  if (currentMillis - previousUpdateTime1 > TEMP1_UPDATE_TIME) {
+  if (currentMillis - previousUpdateTime1 > SENS1_UPTIME) {
     previousUpdateTime1 = currentMillis;
     // dtostrf(mySensor1.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_1", dataTempChar)) {
@@ -61,7 +61,7 @@ void loop() {
     Serial.println(dataTempChar);
   }
 
-  if (currentMillis - previousUpdateTime2 > TEMP2_UPDATE_TIME) {
+  if (currentMillis - previousUpdateTime2 > SENS2_UPTIME) {
     previousUpdateTime2 = currentMillis;
     // dtostrf(mySensor2.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_2", dataTempChar)) {
@@ -70,7 +70,7 @@ void loop() {
     // heatingControl.curentAverageTemperature = calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
     checkHeatingSensor1();
   }
-  if (currentMillis - previousUpdateTime3 > TEMP3_UPDATE_TIME) {
+  if (currentMillis - previousUpdateTime3 > SENS3_UPTIME) {
     previousUpdateTime3 = currentMillis;
     // dtostrf(mySensor3.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_3", dataTempChar)) {

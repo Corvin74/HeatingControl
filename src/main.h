@@ -25,12 +25,6 @@
   // #undef DEBUG
 #endif
 
-// Признак подключения LCD экрана
-#ifndef LCD_ON
-  #define LCD_ON
-  // #undef LCD_ON
-#endif
-
 // Для инициализации IP адреса по DHCP
 #ifndef DHCP
   // #define GET_DHCP
@@ -51,16 +45,26 @@
 // Название устройства при подключении к MQTT
 #define DEVICE_NAME "TermostatOnArduino"
 
-// Для DS18B20
-#define TEMP1_UPDATE_TIME 10000		// Определяем периодичность проверок
-#define TEMP2_UPDATE_TIME 12000		// Определяем периодичность проверок
-#define TEMP3_UPDATE_TIME 14000		// Определяем периодичность проверок
+// Определяем периодичность опроса сенсоров
+#define SENS1_UPTIME 10000
+#define SENS2_UPTIME 12000
+#define SENS3_UPTIME 14000
+#define SENS4_UPTIME 16000
+#define SENS5_UPTIME 18000
 /******************************************************************************/
 
-#define LED_PIN 9                 // Пин 9 с подключенным контрольным светодиодом
-#define RELAY1_PIN 7              // Пин 7 для реле 1
-#define RELAY2_PIN 8              // Пин 8 для реле 2
+#define LED_PIN 13                // Пин 13(PB5) с подключенным контрольным светодиодом
+#define RELAY1_PIN 3              // Пин 3 для реле 1
+#define RELAY2_PIN 4              // Пин 4 для реле 2
+#define RELAY3_PIN 5              // Пин 5 для реле 3
+#define RELAY4_PIN 6              // Пин 6 для реле 4
+#define RELAY5_PIN 7              // Пин 7 для реле 5
 
+// Признак подключения LCD экрана
+#ifndef LCD_ON
+  #define LCD_ON
+  // #undef LCD_ON
+#endif
 #ifdef LCD_ON
   #include <LiquidCrystal_I2C.h>
   LiquidCrystal_I2C lcd(0x27,20,4);
