@@ -36,6 +36,7 @@
 #endif
 
 #ifdef DS18B20
+  #include "onewire.h"
   #include <OneWire.h>
   // OneWire ROM commands
   #define CMD_CONVERTTEMP    0x44
