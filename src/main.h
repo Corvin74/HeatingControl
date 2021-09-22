@@ -9,102 +9,220 @@
 #define MAIN_H_
 
 #include <Arduino.h>
-#include <SPI.h>
-#include <Ethernet2.h>
-#include <PubSubClient.h>
-#include <EEPROM.h>
-#include "thermosensors.h"
 
 /**************************************************************/
-/* Настройка дополнительных параметров: отладка, сеть, etc... */
+/*    Настройка основных параметров: сеть, датчики, etc...    */
 /**************************************************************/
 
-// При отладке компилировать с диагностическими сообщениями
-#ifndef DEBUG
-  #define DEBUG
-  // #undef DEBUG
-#endif
-
-// Для инициализации IP адреса по DHCP
+/*##############################*/
+/*        Настройки сети        */
+/*##############################*/
+// Для использования DHCP
 #ifndef DHCP
-  // #define GET_DHCP
-  #undef GET_DHCP
+  #define GET_DHCP
+  // #undef GET_DHCP
 #endif
-// Для инициализации статического IP адреса в зависимости от положения
+// Для использования статических настроек IP адреса
 #ifndef STATIC
   // #define GET_STATIC_HOME
   #undef GET_STATIC_HOME
 
-  #define GET_STATIC_WORK
-  // #undef GET_STATIC_WORK
+  // #define GET_STATIC_WORK
+  #undef GET_STATIC_WORK
 
   // #define GET_STATIC_COUNTRYHOUSE
   #undef GET_STATIC_COUNTRYHOUSE
 #endif
+// Название устройства при подключении к MQTT брокеру
+#define DEVICE_NAME "TermostatOnAtmega328"
 
-// Название устройства при подключении к MQTT
-#define DEVICE_NAME "TermostatOnArduino"
+/*###################################*/
+/* Настройки периода опроса датчиков */
+/*###################################*/
+// Температура подачи
+#define SENS1_UPTIME 5000
+#define UPDATE_TIME1 5000
+// Температура обратки
+#define SENS2_UPTIME 6000
+#define UPDATE_TIME2 6000
+// Температура в погребе
+#define SENS3_UPTIME 60000
+#define UPDATE_TIME3 60000
+// Температура в холле
+#define SENS4_UPTIME 90000
+#define UPDATE_TIME4 90000
+// Температура на кухне
+#define SENS5_UPTIME 120000
+#define UPDATE_TIME5 120000
 
-// Определяем периодичность опроса сенсоров
-#define SENS1_UPTIME 10000
-#define SENS2_UPTIME 12000
-#define SENS3_UPTIME 14000
-#define SENS4_UPTIME 16000
-#define SENS5_UPTIME 18000
-/******************************************************************************/
-
-#define LED_PIN 13                // Пин 13(PB5) с подключенным контрольным светодиодом
+/*##############################*/
+/*        Настройки реле        */
+/*##############################*/
 #define RELAY1_PIN 3              // Пин 3 для реле 1
 #define RELAY2_PIN 4              // Пин 4 для реле 2
 #define RELAY3_PIN 5              // Пин 5 для реле 3
 #define RELAY4_PIN 6              // Пин 6 для реле 4
 #define RELAY5_PIN 7              // Пин 7 для реле 5
 
+
+/***************************************************************/
+/* Настройка дополнительных параметров: отладка, экран, etc... */
+/***************************************************************/
+
+// При отладке компилировать с диагностическими сообщениями
+#ifndef DEBUG
+  #define DEBUG
+  // #undef DEBUG
+#endif
+#define LED_PIN 13                // Пин 13(PB5) с подключенным контрольным светодиодом
 // Признак подключения LCD экрана
 #ifndef LCD_ON
   #define LCD_ON
   // #undef LCD_ON
 #endif
+
+/***************************************************************/
+
+/*###############################*/
+/*  Подключение общих библиотек  */
+/*###############################*/
+#include <SPI.h>
+#include <Ethernet2.h>
+#include <PubSubClient.h>
+#include <EEPROM.h>
+#include "thermosensors.h"
+
 #ifdef LCD_ON
   #include <LiquidCrystal_I2C.h>
   LiquidCrystal_I2C lcd(0x27,20,4);
 #endif
 
-// -------------------------------------- END - Пины Arduino ------------------------------------------------
+/****************************************************************/
+/*        Объявление переменных используемых в программе        */
+/****************************************************************/
+
+/*###############################*/
+/*      Объявление структур      */
+/*###############################*/
+struct HeatingControl {
+	float curentAverageTemperature;		// Текущая средняя температура в доме
+	uint8_t currentState;	// Состояние котла
+	float targetTemperature;	// Текущая целевая температура
+	float hysteresis;	// Допустимый гистерезис целевой температуры
+	uint8_t heatingAuto;		// Авторежим
+  uint8_t heatingChanged;
+};
+
+struct MessageMQTT {
+	String topic;		// Текущая средняя температура в доме
+	String payload;	// Состояние котла
+};
+
+/*##############################*/
+/*        Настройки сети        */
+/*##############################*/
+
+// MAC-адрес для модуля W5500
+byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDA, 0x01 };
+
+// Настройки статического IP-адрес для домашней сети
+#ifdef GET_STATIC_HOME
+  IPAddress ip(172, 20, 10, 201);
+  IPAddress ip_dns(172, 20, 10, 1);
+  IPAddress ip_gateway(172, 20, 10, 1);
+  IPAddress ip_subnet(255, 255, 255, 0);
+#endif
+
+// Настройки статического IP-адрес для рабочей сети
+#ifdef GET_STATIC_WORK
+  IPAddress ip(172, 16, 6, 201);
+  IPAddress ip_dns(172, 16, 6, 1);
+  IPAddress ip_gateway(172, 16, 6, 1);
+  IPAddress ip_subnet(255, 255, 255, 0);
+#endif
+
+// Настройки статического IP-адрес для сети на даче
+#ifdef GET_STATIC_COUNTRYHOUSE
+  IPAddress ip(172, 25, 24, 201);
+  IPAddress ip_dns(8, 8, 8, 8);
+  IPAddress ip_gateway(172, 20, 20, 1);
+  IPAddress ip_subnet(255, 255, 254, 0);
+#endif
+// Структура для работы с MQTT сервером
+MessageMQTT messageMQTT;
+// IP-адресс MQTT брокера в домашней сети
+IPAddress server(172, 20, 10, 135);
+// IP-адресс MQTT брокера в рабочей сети
+// IPAddress server(172, 16, 6, 40);
+// IP-адресс MQTT брокера в дачной сети
+// IPAddress server(172, 25, 24, 119);
+
+// Уставновить Логин и Пароль для подключения к MQTT брокеру
+const char* mqtt_username = "corvin";
+const char* mqtt_password = "eTx1243";
+
+EthernetClient ethClient;
+
+/*#################################*/
+/*  Адреса температурных датчиков  */
+/*  в теории их надо убрать т.к.   */
+/*  на каждом порту только один    */
+/*  датчик                         */
+/*#################################*/
+
+uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0xBC, 0xB4, 0xB2, 0x16, 0x05, 0x33 };
+uint8_t ds18b20Sensor2[8] = { 0x28, 0x4B, 0x18, 0x43, 0x98, 0x01, 0x02, 0xCC };
+uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0xAF, 0xA9, 0xB2, 0x16, 0x05, 0xA4 };
+uint8_t ds18b20Sensor4[8] = { 0x28, 0x88, 0x21, 0x43, 0x98, 0x01, 0x02, 0x7D };
+uint8_t ds18b20Sensor5[8] = { 0x28, 0x15, 0x00, 0x43, 0x98, 0x0F, 0x00, 0xD3 };
+
+/*################################*/
+/*   Вспомагательные переменные   */
+/*################################*/
+// Признак первого запуска
+uint8_t coldStart;
 
 /***************************************************************/
 /*          Описание функций используемых в программе          */
 /***************************************************************/
+
 /*
  * Инициализируем работу портов
  */
 void initializeVariables(void);
+
 /*
  * Инициируем всю необходимую переферию
  */
 void initializeThePeriphery(void);
+
 /*
  * Инициируем передачу данных по шине UART на скорости 9600 бит/сек.
  */
 void initSerial(void);
+
 /*
  * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
  * Ethernet2, если использовать EthernetShield W5100 надо применять библиотеку
  * Ethernet
  */
 void initNetwork(void);
+
 /*
  * Колбэк функция для работы с MQTT-брокером
  */
 void callback(char* topic, byte* payload, unsigned int length);
+
 /*
  * Функция для подключения к MQTT-брокеру
  */
 boolean reconnect(void);
+
 /*
  * Среднее значение температуры в доме
  */
 float calcAvarage(float sensor1, float sensor2);
+
 /*
  * Мигаем светодиодом
  * ledPin - пин к которому подключен светодиод
@@ -112,18 +230,22 @@ float calcAvarage(float sensor1, float sensor2);
  * quantity - количество вспышек
  */
 void flashLed(uint8_t ledPin, uint16_t time, uint8_t quantity);
+
 /*
  * Проверяем необходимость включения котла по средней температуре
  */
 void checkHeatingAVG(void);
+
 /*
  * Проверяем необходимость включения котла по температуре первого датчика
  */
 void checkHeatingSensor1(void);
+
 /*
  * Включаем котл если он выключен
  */
 void heatingON(void);
+
 /*
  * Выключаем котл если он включен
  */
@@ -132,24 +254,6 @@ void heatingOFF(void);
 /****************************************************************/
 /*         Описание переменных используемых в программе         */
 /****************************************************************/
-// Признак первого запуска
-uint8_t coldStart;
-// Адреса датчиков используемых в проекте
-// uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x64, 0xAA, 0xB2, 0x16, 0x05, 0x7E };
-// uint8_t ds18b20Sensor2[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
-// uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
-// uint8_t ds18b20SensorX[8] = { 0x28, 0x, 0x, 0x, 0x, 0x, 0x, 0x };
-// uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0x98, 0x29, 0x03, 0x15, 0x03, 0x37 }; // Датчик в корридоре (герметичный) 28 FF BC B4 B2 16 5 33
-uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0xBC, 0xB4, 0xB2, 0x16, 0x05, 0x33 }; // Датчик в корридоре (герметичный) 28 FF BC B4 B2 16 5 33
-uint8_t ds18b20Sensor2[8] = { 0x28, 0x4B, 0x18, 0x43, 0x98, 0x01, 0x02, 0xCC }; // Датчик в погребе
-uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0xAF, 0xA9, 0xB2, 0x16, 0x05, 0xA4 }; // Датчик в котельной на плате
-
-uint8_t ds18b20Sensor4[8] = { 0x28, 0x88, 0x21, 0x43, 0x98, 0x01, 0x02, 0x7D };
-uint8_t ds18b20Sensor5[8] = { 0x28, 0x15, 0x00, 0x43, 0x98, 0x0F, 0x00, 0xD3 };
-uint8_t ds18b20Sensor6[8] = { 0x28, 0x33, 0x25, 0x43, 0x98, 0x24, 0x00, 0x1F }; // Датчик в котельной у пола
-uint8_t ds18b20Sensor7[8] = { 0x28, 0xB3, 0x0B, 0x43, 0x98, 0x01, 0x02, 0x2D };
-uint8_t ds18b20Sensor8[8] = { 0x28, 0xFF, 0x2F, 0x99, 0x50, 0x17, 0x04, 0x35 };
-uint8_t ds18b20Sensor9[8] = { 0x28, 0x86, 0x01, 0x43, 0x98, 0x0E, 0x00, 0x32 };
 // Объекты датчиков температуры
 // Ds18b20 mySensor1(ds18b20Sensor1, sizeof(ds18b20Sensor1), TEMP1_UPDATE_TIME);
 // Ds18b20 mySensor2(ds18b20Sensor2, sizeof(ds18b20Sensor2), TEMP2_UPDATE_TIME);
@@ -168,71 +272,10 @@ long previousUpdateTime1;
 long previousUpdateTime2;
 long previousUpdateTime3;
 
-struct HeatingControl {
-	float curentAverageTemperature;		// Текущая средняя температура в доме
-	uint8_t currentState;	// Состояние котла
-	float targetTemperature;	// Текущая целевая температура
-	float hysteresis;	// Допустимый гистерезис целевой температуры
-	uint8_t heatingAuto;		// Авторежим
-  uint8_t heatingChanged;
-};
-
 HeatingControl heatingControl;
 uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct);
 uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct);
 
-struct MessageMQTT {
-	String topic;		// Текущая средняя температура в доме
-	String payload;	// Состояние котла
-};
 
-MessageMQTT messageMQTT;
-
-// MAC-адрес для модуля W5500
-byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDA, 0x01 };
-
-#ifdef GET_STATIC_HOME
-  // Статический IP-адрес для модуля W5500
-  IPAddress ip(172, 20, 10, 163);
-  // Адрес DNS сервера для модуля W5500
-  IPAddress ip_dns(8, 8, 8, 8);
-  // Адрес шлюза для модуля W5500
-  IPAddress ip_gateway(172, 20, 10, 1);
-  // Адрес подсети для модуля W5500
-  IPAddress ip_subnet(255, 255, 255, 0);
-#endif
-
-#ifdef GET_STATIC_WORK
-  // Статический IP-адрес для модуля W5500
-  IPAddress ip(172, 16, 6, 201);
-  // Адрес DNS сервера для модуля W5500
-  IPAddress ip_dns(172, 16, 6, 1);
-  // Адрес шлюза для модуля W5500
-  IPAddress ip_gateway(172, 16, 6, 1);
-  // Адрес подсети для модуля W5500
-  IPAddress ip_subnet(255, 255, 255, 0);
-#endif
-
-#ifdef GET_STATIC_COUNTRYHOUSE
-  // Статический IP-адрес для модуля W5500
-  IPAddress ip(172, 20, 20, 202);
-  // Адрес DNS сервера для модуля W5500
-  IPAddress ip_dns(8, 8, 8, 8);
-  // Адрес шлюза для модуля W5500
-  IPAddress ip_gateway(172, 20, 20, 1);
-  // Адрес подсети для модуля W5500
-  IPAddress ip_subnet(255, 255, 254, 0);
-#endif
-
-// IP-адресс MQTT брокера
-// IPAddress server(172, 20, 10, 102);
-IPAddress server(172, 20, 20, 125);
-// IPAddress server(172, 16, 6, 40);
-
-// Уставновить Логин и Пароль для подключения к MQTT брокеру
-const char* mqtt_username = "corvin";
-const char* mqtt_password = "eTx1243";
-
-EthernetClient ethClient;
 PubSubClient client(server, 1883, callback, ethClient);
 #endif /* MAIN_H_ */
