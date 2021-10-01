@@ -8,29 +8,27 @@ void setup() {
     lcd.print("HeatingControl");
     lcd.setCursor(3,1);
     lcd.print("DIP Ver: 0.0.2");
-  #endif
-  #ifdef LCD_ON
     lcd.setCursor(0,2);
     lcd.print("Init serial...      ");
-    delay(100);
+    delay(500);
   #endif
   initSerial();
   #ifdef LCD_ON
     lcd.setCursor(0,2);
     lcd.print("Init variables...   ");
-    delay(100);
+    delay(500);
   #endif
   initializeVariables();
   #ifdef LCD_ON
     lcd.setCursor(0,2);
     lcd.print("Init periphery...   ");
-    delay(100);
+    delay(500);
   #endif
   initializeThePeriphery();
   #ifdef LCD_ON
     lcd.setCursor(0,2);
     lcd.print("Init network...     ");
-    delay(100);
+    delay(500);
     lcd.noBacklight();
   #endif
   initNetwork();
@@ -187,35 +185,74 @@ void initSerial(void){
  * Ethernet
  */
 void initNetwork(void){
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Start ethernet...   ");
+    delay(500);
+    lcd.noBacklight();
+  #endif
   #ifdef DEBUG
     Serial.println(F("Start ethernet..."));
   #endif
   #ifdef GET_DHCP
     if (Ethernet.begin(mac) == 0) {
+      #ifdef LCD_ON
+        lcd.setCursor(0,2);
+        lcd.print("Failed to get IP add");
+        lcd.setCursor(0,3);
+        lcd.print("ress from DHCP server");
+        delay(500);
+        lcd.noBacklight();
+      #endif
       Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
       flashLed(LED_PIN, 250, 20);
     }
     flashLed(LED_PIN, 100, 2);
     // Выводим в консоль адрес присвоеный интерфейсу
+    #ifdef LCD_ON
+      lcd.setCursor(0,2);
+      lcd.print("My DHCP IP address: ");
+      delay(500);
+      lcd.noBacklight();
+    #endif
     Serial.print(F("My DHCP IP address: "));
   #else
     Ethernet.begin(mac,ip,ip_dns,ip_gateway);
-    // if (Ethernet.begin(mac,ip) == 0) {
+    // void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
+    // if (Ethernet.begin(mac,ip,ip_dns,ip_gateway,ip_subnet) == 0) {
     //   Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
     //   flashLed(LED_PIN, 250, 20);
     // }
     // Выводим в консоль адрес присвоеный интерфейсу
+    #ifdef LCD_ON
+      lcd.setCursor(0,2);
+      lcd.print("My static IP addres:");
+      delay(500);
+      lcd.noBacklight();
+    #endif
     Serial.print(F("My static IP address: "));
     flashLed(LED_PIN, 100, 2);
   #endif
 
+  #ifdef LCD_ON
+    lcd.setCursor(0,3);
+  #endif
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
     // print the value of each byte of the IP address:
     if (thisByte != 3) {
       Serial.print(Ethernet.localIP()[thisByte], DEC);
       Serial.print(".");
+      #ifdef LCD_ON
+        lcd.print(Ethernet.localIP()[thisByte], DEC);
+        lcd.print(".");
+      #endif
     } else {
       Serial.println(Ethernet.localIP()[thisByte], DEC);
+      #ifdef LCD_ON
+        lcd.print(Ethernet.localIP()[thisByte], DEC);
+        delay(500);
+        lcd.noBacklight();
+      #endif
     }
   }
 }
