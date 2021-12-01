@@ -8,34 +8,13 @@ void setup() {
     lcd.print("HeatingControl");
     lcd.setCursor(3,1);
     lcd.print("DIP Ver: 0.0.2");
-    lcd.setCursor(0,2);
-    lcd.print("Init serial...      ");
     delay(500);
   #endif
   initSerial();
-  #ifdef LCD_ON
-    lcd.setCursor(0,2);
-    lcd.print("Init variables...   ");
-    delay(500);
-  #endif
   initializeVariables();
-  #ifdef LCD_ON
-    lcd.setCursor(0,2);
-    lcd.print("Init periphery...   ");
-    delay(500);
-  #endif
   initializeThePeriphery();
-  #ifdef LCD_ON
-    lcd.setCursor(0,2);
-    lcd.print("Init network...     ");
-    delay(500);
-    lcd.noBacklight();
-  #endif
   initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
-  // mySensor1.startConversion();
-  // mySensor2.startConversion();
-  // mySensor3.startConversion();
 }
 
 void loop() {
@@ -53,17 +32,38 @@ void loop() {
     previousUpdateTime1 = currentMillis;
     // dtostrf(mySensor1.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_1", dataTempChar)) {
-      Serial.println(F("Publish sensor1 temperature failed"));
+      #ifdef DEBUG
+        Serial.println(F("Publish sensor1 temperature failed"));
+      #endif
     }
-    Serial.print(F("Sensor4 temperature = "));
-    Serial.println(dataTempChar);
+    #ifdef DEBUG
+      Serial.print(F("Sensor4 temperature = "));
+      Serial.println(dataTempChar);
+    #endif
+    #ifdef WL102_ON
+      char msg0[3];
+      int tem = 1200;
+      itoa(tem, msg0, 10);                    // Преобразование температуры в массив char
+      #ifdef DEBUGRF
+        // Serial.println(F("Start RF transmit"));
+        Serial.println("Start RF transmit");
+      #endif
+      vw_send((uint8_t *)msg0, strlen(msg0)); // Передача сообщения
+      vw_wait_tx();                           // Ждем завершения передачи
+      #ifdef DEBUGRF
+        // Serial.println(F("End RF transmit"));
+        Serial.println("End RF transmit");
+      #endif
+    #endif
   }
 
   if (currentMillis - previousUpdateTime2 > SENS2_UPTIME) {
     previousUpdateTime2 = currentMillis;
     // dtostrf(mySensor2.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_2", dataTempChar)) {
-      Serial.println(F("Publish sensor2 temperature failed"));
+      #ifdef DEBUG
+        Serial.println(F("Publish sensor2 temperature failed"));
+      #endif
     }
     // heatingControl.curentAverageTemperature = calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
     checkHeatingSensor1();
@@ -72,7 +72,9 @@ void loop() {
     previousUpdateTime3 = currentMillis;
     // dtostrf(mySensor3.publishSensor(), 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/ds18b20_3", dataTempChar)) {
-      Serial.println(F("Publish sensor3 temperature failed"));
+      #ifdef DEBUG
+        Serial.println(F("Publish sensor3 temperature failed"));
+      #endif
     }
   }
   if ((messageMQTT.topic == "/countryhouse/heating/Command") && !(heatingControl.heatingChanged)) {
@@ -147,6 +149,11 @@ void loop() {
  * Инициализируем переменные используемые в программе
  */
 void initializeVariables(void){
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init variables...   ");
+    delay(500);
+  #endif
   coldStart = 1;
 
   dsSensor1 = -200.0;
@@ -164,6 +171,17 @@ void initializeVariables(void){
  * Инициализируем работу портов
  */
 void initializeThePeriphery(void){
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init periphery...   ");
+    delay(500);
+  #endif
+  #ifdef WL102_ON
+    #define WL102_TX_PIN PB1
+    vw_setup(4800);     // Скорость соединения VirtualWire
+    vw_set_tx_pin(WL102_TX_PIN);   // Вывод передачи VirtualWire
+  #endif
+
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(RELAY1_PIN, HIGH);
   digitalWrite(RELAY2_PIN, HIGH);
@@ -174,11 +192,16 @@ void initializeThePeriphery(void){
  * Инициализируем работу по шине UART на скорости 9600 бит/сек.
  */
 void initSerial(void){
-   Serial.begin(9600);
-   while (!Serial) {
-     delay(100); // hang out until serial port opens
-   }
- }
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Init serial...      ");
+    delay(500);
+  #endif
+  Serial.begin(9600);
+  while (!Serial) {
+    delay(100); // hang out until serial port opens
+  }
+}
 /*
  * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
  * Ethernet2, если использовать EthernetShield W5100 надо применять библиотеку
@@ -187,7 +210,7 @@ void initSerial(void){
 void initNetwork(void){
   #ifdef LCD_ON
     lcd.setCursor(0,2);
-    lcd.print("Start ethernet...   ");
+    lcd.print("Init ethernet...   ");
     delay(500);
     lcd.noBacklight();
   #endif
@@ -348,6 +371,11 @@ uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct){
   return 0;
 }
 uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct){
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print("Restore from EEPROM");
+    delay(500);
+  #endif
   int16_t eepromAddress = 0;
   EEPROM.get(eepromAddress,heatingStruct->curentAverageTemperature);
 

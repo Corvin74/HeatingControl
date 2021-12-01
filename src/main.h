@@ -36,6 +36,19 @@
 // Название устройства при подключении к MQTT брокеру
 #define DEVICE_NAME "TermostatOnAtmega328"
 
+/*###########################################*/
+/* Настройки радиомодуля на 433MHz WL102-341 */
+/*###########################################*/
+// Для использования модуля включить дефайн
+#ifndef WL102_ON
+  #define WL102_ON
+  // #undef WL102_ON
+#endif
+#ifdef WL102_ON
+  #include <VirtualWire.h>
+  #define WL102_TX_PIN PB1
+#endif
+
 /*###################################*/
 /* Настройки периода опроса датчиков */
 /*###################################*/
@@ -71,8 +84,12 @@
 
 // При отладке компилировать с диагностическими сообщениями
 #ifndef DEBUG
-  #define DEBUG
-  // #undef DEBUG
+  // #define DEBUG
+  #undef DEBUG
+#endif
+#ifndef DEBUGRF
+  #define DEBUGRF
+  // #undef DEBUGRF
 #endif
 #define LED_PIN 13                // Пин 13(PB5) с подключенным контрольным светодиодом
 // Признак подключения LCD экрана
