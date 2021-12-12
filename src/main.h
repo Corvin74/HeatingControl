@@ -41,8 +41,8 @@
 /*###########################################*/
 // Для использования модуля включить дефайн
 #ifndef WL102_ON
-  #define WL102_ON
-  // #undef WL102_ON
+  // #define WL102_ON
+  #undef WL102_ON
 #endif
 #ifdef WL102_ON
   #include <VirtualWire.h>
@@ -68,6 +68,38 @@
 #define SENS5_UPTIME 120000
 #define UPDATE_TIME5 120000
 
+/*#############################*/
+/*   Настройки термодатчиков   */
+/*#############################*/
+
+#define SENSOR1_DIGITAL
+#define SENSOR2_DIGITAL
+#define SENSOR3_DIGITAL
+#define SENSOR4_DIGITAL
+#define SENSOR5_DIGITAL
+
+#define CMD_CONVERTTEMP    0x44
+#define CMD_RSCRATCHPAD    0xBE
+#define CMD_WSCRATCHPAD    0x4E
+#define CMD_CPYSCRATCHPAD  0x48
+#define CMD_RECEEPROM      0xB8
+#define CMD_RPWRSUPPLY     0xB4
+#define CMD_SEARCHROM      0xF0
+#define CMD_READROM        0x33
+#define CMD_MATCHROM       0x55
+#define CMD_SKIPROM        0xCC
+#define CMD_ALARMSEARCH    0xEC
+
+#ifdef SENSOR1_DIGITAL
+  #include <OneWire.h>
+  OneWire sensor1(A0);
+#endif
+// uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0xBC, 0xB4, 0xB2, 0x16, 0x05, 0x33 };
+// uint8_t ds18b20Sensor2[8] = { 0x28, 0x4B, 0x18, 0x43, 0x98, 0x01, 0x02, 0xCC };
+// uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0xAF, 0xA9, 0xB2, 0x16, 0x05, 0xA4 };
+// uint8_t ds18b20Sensor4[8] = { 0x28, 0x88, 0x21, 0x43, 0x98, 0x01, 0x02, 0x7D };
+// uint8_t ds18b20Sensor5[8] = { 0x28, 0x15, 0x00, 0x43, 0x98, 0x0F, 0x00, 0xD3 };
+
 /*##############################*/
 /*        Настройки реле        */
 /*##############################*/
@@ -84,18 +116,20 @@
 
 // При отладке компилировать с диагностическими сообщениями
 #ifndef DEBUG
-  // #define DEBUG
-  #undef DEBUG
+  #define DEBUG
+  // #undef DEBUG
 #endif
-#ifndef DEBUGRF
-  #define DEBUGRF
-  // #undef DEBUGRF
+#ifdef WL102_ON
+  #ifndef DEBUGRF
+    #define DEBUGRF
+    // #undef DEBUGRF
+  #endif
 #endif
 #define LED_PIN 13                // Пин 13(PB5) с подключенным контрольным светодиодом
 // Признак подключения LCD экрана
 #ifndef LCD_ON
-  #define LCD_ON
-  // #undef LCD_ON
+  // #define LCD_ON
+  #undef LCD_ON
 #endif
 
 /***************************************************************/
@@ -168,7 +202,7 @@ byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDA, 0x01 };
 // Структура для работы с MQTT сервером
 MessageMQTT messageMQTT;
 // IP-адресс MQTT брокера в домашней сети
-IPAddress server(172, 20, 10, 135);
+IPAddress server(172, 20, 10, 131);
 // IP-адресс MQTT брокера в рабочей сети
 // IPAddress server(172, 16, 6, 40);
 // IP-адресс MQTT брокера в дачной сети
@@ -179,19 +213,6 @@ const char* mqtt_username = "corvin";
 const char* mqtt_password = "eTx1243";
 
 EthernetClient ethClient;
-
-/*#################################*/
-/*  Адреса температурных датчиков  */
-/*  в теории их надо убрать т.к.   */
-/*  на каждом порту только один    */
-/*  датчик                         */
-/*#################################*/
-
-uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0xBC, 0xB4, 0xB2, 0x16, 0x05, 0x33 };
-uint8_t ds18b20Sensor2[8] = { 0x28, 0x4B, 0x18, 0x43, 0x98, 0x01, 0x02, 0xCC };
-uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0xAF, 0xA9, 0xB2, 0x16, 0x05, 0xA4 };
-uint8_t ds18b20Sensor4[8] = { 0x28, 0x88, 0x21, 0x43, 0x98, 0x01, 0x02, 0x7D };
-uint8_t ds18b20Sensor5[8] = { 0x28, 0x15, 0x00, 0x43, 0x98, 0x0F, 0x00, 0xD3 };
 
 /*################################*/
 /*   Вспомагательные переменные   */
@@ -207,7 +228,10 @@ uint8_t coldStart;
  * Инициализируем работу портов
  */
 void initializeVariables(void);
-
+/*
+ * Инициализируем LCD экран
+ */
+void initLCD(void);
 /*
  * Инициируем всю необходимую переферию
  */
@@ -224,7 +248,10 @@ void initSerial(void);
  * Ethernet
  */
 void initNetwork(void);
-
+/*
+ * Инициализируем датчики температуры
+ */
+void initSensor(void);
 /*
  * Колбэк функция для работы с MQTT-брокером
  */
@@ -285,9 +312,9 @@ float TSensor3;
 float TSensor4;
 float TSensor5;
 // Переменные для хранения времени последнего обновления данных
-long previousUpdateTime1;
-long previousUpdateTime2;
-long previousUpdateTime3;
+unsigned long previousUpdateTime1 = 0;
+unsigned long previousUpdateTime2 = 0;
+unsigned long previousUpdateTime3 = 0;
 
 HeatingControl heatingControl;
 uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct);

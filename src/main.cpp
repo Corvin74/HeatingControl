@@ -1,14 +1,12 @@
 #include "main.h"
 
 void setup() {
+  #ifdef DEBUG
+    Serial.println(F("Heating control setup start."));
+    Serial.println(F("Main board DIP Ver: 0.0.2"));
+  #endif
   #ifdef LCD_ON
-    lcd.init();
-    lcd.backlight();
-    lcd.setCursor(3,0);
-    lcd.print("HeatingControl");
-    lcd.setCursor(3,1);
-    lcd.print("DIP Ver: 0.0.2");
-    delay(500);
+    initLCD();
   #endif
   initSerial();
   initializeVariables();
@@ -20,7 +18,8 @@ void setup() {
 void loop() {
   messageMQTT.topic = "";
   messageMQTT.payload = "";
-  client.loop();
+  byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
+  // float temperature;  // измеренная температура
   if (heatingControl.heatingChanged) {
   // if ((heatingControl.heatingChanged) && (messageMQTT.topic == "/countryhouse/heating/Command")) {
     heatingControl.heatingChanged = 0;
@@ -30,16 +29,35 @@ void loop() {
 
   if (currentMillis - previousUpdateTime1 > SENS1_UPTIME) {
     previousUpdateTime1 = currentMillis;
+    #ifdef SENSOR1_DIGITAL
+      if (sensor1.reset() == 1)
+      {
+        sensor1.write(CMD_SKIPROM);     // пропуск ROM
+        sensor1.write(CMD_RSCRATCHPAD); // команда чтения памяти датчика
+        sensor1.read_bytes(bufData, 9); // чтение памяти датчика, 9 байтов
+        if ( OneWire::crc8(bufData, 8) == bufData[8] ) {  // проверка CRC
+          // данные правильные
+          TSensor1 =  (float)((int)bufData[0] | (((int)bufData[1]) << 8)) * 0.0625 + 0.03125;
+          #ifdef DEBUG
+            Serial.print(F("Current temperature on sensor1: "));
+            Serial.println(TSensor1);
+          #endif
+        }
+        sensor1.reset();                // сброс шины
+        #ifdef DEBUG
+          Serial.println(F("Sensor1 present, send init measurement"));
+        #endif
+        sensor1.write(CMD_SKIPROM);
+        sensor1.write(CMD_CONVERTTEMP);
+      }
+    #endif
     // dtostrf(mySensor1.publishSensor(), 5, 2, dataTempChar);
-    if (!client.publish("/countryhouse/ds18b20_1", dataTempChar)) {
+    dtostrf(TSensor1, 5, 2, dataTempChar);
+    if (!client.publish("/countryhouse/temperature/sensor1", dataTempChar)) {
       #ifdef DEBUG
         Serial.println(F("Publish sensor1 temperature failed"));
       #endif
     }
-    #ifdef DEBUG
-      Serial.print(F("Sensor4 temperature = "));
-      Serial.println(dataTempChar);
-    #endif
     #ifdef WL102_ON
       char msg0[3];
       int tem = 1200;
@@ -56,7 +74,7 @@ void loop() {
       #endif
     #endif
   }
-
+/*
   if (currentMillis - previousUpdateTime2 > SENS2_UPTIME) {
     previousUpdateTime2 = currentMillis;
     // dtostrf(mySensor2.publishSensor(), 5, 2, dataTempChar);
@@ -143,6 +161,8 @@ void loop() {
     }
     // saveSettingsToEEPROM(&heatingControl);
   }
+  */
+  client.loop();
 }
 
 /*
@@ -151,8 +171,11 @@ void loop() {
 void initializeVariables(void){
   #ifdef LCD_ON
     lcd.setCursor(0,2);
-    lcd.print("Init variables...   ");
+    lcd.print(F("Init variables...   "));
     delay(500);
+  #endif
+  #ifdef DEBUG
+    Serial.println(F("Initialize variables..."));
   #endif
   coldStart = 1;
 
@@ -171,22 +194,42 @@ void initializeVariables(void){
  * Инициализируем работу портов
  */
 void initializeThePeriphery(void){
+  #ifdef DEBUG
+    Serial.println(F("Initialize periphery..."));
+  #endif
   #ifdef LCD_ON
     lcd.setCursor(0,2);
-    lcd.print("Init periphery...   ");
+    lcd.print(F("Init periphery...   "));
     delay(500);
   #endif
   #ifdef WL102_ON
+    #ifdef DEBUG
+      Serial.println(F("Initialize WL102..."));
+    #endif
     #define WL102_TX_PIN PB1
     vw_setup(4800);     // Скорость соединения VirtualWire
     vw_set_tx_pin(WL102_TX_PIN);   // Вывод передачи VirtualWire
   #endif
 
+  #ifdef DEBUG
+    Serial.println(F("Initialize LED output..."));
+  #endif
   pinMode(LED_PIN, OUTPUT);
+  flashLed(LED_PIN, 1000, 1);
+  flashLed(LED_PIN, 50, 2);
+  #ifdef DEBUG
+    Serial.println(F("Initialize RELAY output..."));
+  #endif
   digitalWrite(RELAY1_PIN, HIGH);
   digitalWrite(RELAY2_PIN, HIGH);
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
+  flashLed(LED_PIN, 1000, 1);
+  flashLed(LED_PIN, 50, 2);
+  #ifdef DEBUG
+    Serial.println(F("Initialize thermosensor..."));
+  #endif
+  initSensor();
 }
 /*
  * Инициализируем работу по шине UART на скорости 9600 бит/сек.
@@ -194,13 +237,18 @@ void initializeThePeriphery(void){
 void initSerial(void){
   #ifdef LCD_ON
     lcd.setCursor(0,2);
-    lcd.print("Init serial...      ");
+    lcd.print(F("Init serial...      "));
     delay(500);
   #endif
   Serial.begin(9600);
   while (!Serial) {
     delay(100); // hang out until serial port opens
   }
+  #ifdef DEBUG
+    Serial.println(F("Initialize HW Serial complite..."));
+  #endif
+  flashLed(LED_PIN, 1000, 1);
+  flashLed(LED_PIN, 50, 2);
 }
 /*
  * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
@@ -215,9 +263,10 @@ void initNetwork(void){
     lcd.noBacklight();
   #endif
   #ifdef DEBUG
-    Serial.println(F("Start ethernet..."));
+    Serial.println(F("Start initialize ethernet..."));
   #endif
   #ifdef GET_DHCP
+    flashLed(LED_PIN, 500, 2);
     if (Ethernet.begin(mac) == 0) {
       #ifdef LCD_ON
         lcd.setCursor(0,2);
@@ -227,18 +276,23 @@ void initNetwork(void){
         delay(500);
         lcd.noBacklight();
       #endif
-      Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
-      flashLed(LED_PIN, 250, 20);
+      #ifdef DEBUG
+        Serial.println(F("!!!Failed to get IP address from DHCP server!!!"));
+      #endif
+      flashLed(LED_PIN, 2000, 5);
     }
-    flashLed(LED_PIN, 100, 2);
+    delay(500);
+    // flashLed(LED_PIN, 1000, 2);
     // Выводим в консоль адрес присвоеный интерфейсу
+    #ifdef DEBUG
+      Serial.print(F("My DHCP IP address: "));
+    #endif
     #ifdef LCD_ON
       lcd.setCursor(0,2);
       lcd.print("My DHCP IP address: ");
       delay(500);
       lcd.noBacklight();
     #endif
-    Serial.print(F("My DHCP IP address: "));
   #else
     Ethernet.begin(mac,ip,ip_dns,ip_gateway);
     // void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
@@ -253,7 +307,9 @@ void initNetwork(void){
       delay(500);
       lcd.noBacklight();
     #endif
-    Serial.print(F("My static IP address: "));
+    #ifdef DEBUG
+      Serial.print(F("My static IP address: "));
+    #endif
     flashLed(LED_PIN, 100, 2);
   #endif
 
@@ -263,14 +319,18 @@ void initNetwork(void){
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
     // print the value of each byte of the IP address:
     if (thisByte != 3) {
-      Serial.print(Ethernet.localIP()[thisByte], DEC);
-      Serial.print(".");
+      #ifdef DEBUG
+        Serial.print(Ethernet.localIP()[thisByte], DEC);
+        Serial.print(".");
+      #endif
       #ifdef LCD_ON
         lcd.print(Ethernet.localIP()[thisByte], DEC);
         lcd.print(".");
       #endif
     } else {
-      Serial.println(Ethernet.localIP()[thisByte], DEC);
+      #ifdef DEBUG
+        Serial.println(Ethernet.localIP()[thisByte], DEC);
+      #endif
       #ifdef LCD_ON
         lcd.print(Ethernet.localIP()[thisByte], DEC);
         delay(500);
@@ -280,7 +340,39 @@ void initNetwork(void){
   }
 }
 /*############################# End initNetwork ##############################*/
-
+/*
+ * Инициализируем LCD экран
+ */
+void initLCD(void){
+  #ifdef DEBUG
+    Serial.println(F("Initialize LCD 2004 I2C 0x27..."));
+  #endif
+  #ifdef LCD_ON
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(3,0);
+    lcd.print(F("HeatingControl"));
+    lcd.setCursor(3,1);
+    lcd.print(F("DIP Ver: 0.0.2"));
+    delay(500);
+  #endif
+}
+/*
+ * Инициализируем датчики температуры
+ */
+void initSensor(void){
+  #ifdef SENSOR1_DIGITAL
+    if (sensor1.reset() == 1)
+    {
+      #ifdef DEBUG
+        Serial.println(F("Sensor1 present, send init measurement"));
+      #endif
+      sensor1.write(CMD_SKIPROM);
+      sensor1.write(CMD_CONVERTTEMP);
+      delay(1000);
+    }
+  #endif
+}
 /*
  * Возвращает среднее значение темаературы
  */
@@ -371,11 +463,11 @@ uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct){
   return 0;
 }
 uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct){
-  #ifdef LCD_ON
-    lcd.setCursor(0,2);
-    lcd.print("Restore from EEPROM");
-    delay(500);
-  #endif
+  // #ifdef LCD_ON
+  //   lcd.setCursor(0,2);
+  //   lcd.print("Restore from EEPROM");
+  //   delay(500);
+  // #endif
   int16_t eepromAddress = 0;
   EEPROM.get(eepromAddress,heatingStruct->curentAverageTemperature);
 
@@ -492,7 +584,7 @@ boolean reconnect(void) {
     //TODO Настроить загрузку начальных значений из EEPROM
     if (coldStart) {
       client.publish("/countryhouse/heating/Command", "OFF");
-      client.publish("/countryhouse/heating/curentTemperature", "0.00");
+      client.publish("/countryhouse/heating/currentTemperature", "0.00");
       dtostrf(heatingControl.targetTemperature, 5, 2, tempChar);
       client.publish("/countryhouse/heating/targetTemperature", tempChar);
       client.publish("/countryhouse/heating/targetTemperatureHiden", tempChar);
@@ -515,7 +607,7 @@ boolean reconnect(void) {
     #endif
     client.subscribe("/countryhouse/heating/curentTemperature");
     #ifdef DEBUG
-      Serial.println(F("Connected to: /countryhouse/heating/curentTemperature"));
+      Serial.println(F("Connected to: /countryhouse/heating/currentTemperature"));
     #endif
     client.subscribe("/countryhouse/heating/targetTemperature");
     #ifdef DEBUG
