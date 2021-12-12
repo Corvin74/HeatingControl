@@ -386,7 +386,7 @@ float calcAvarage(float sensor1, float sensor2){
   //   Serial.println(F(" °C"));
   // #endif
   char tempChar[5];
-  float curAvgTemp = 0.00;
+  float curAvgTemp = 250.00;
   if ((sensor1 > -200) && (sensor2 > -200)){
     curAvgTemp = (sensor1 + sensor2) / 2;
     dtostrf(curAvgTemp, 5, 2, tempChar);
@@ -398,6 +398,7 @@ float calcAvarage(float sensor1, float sensor2){
     client.publish("/countryhouse/heating/curentTemperature", tempChar);
     return curAvgTemp;
   }
+  return curAvgTemp;
 }
 /*
  * Мигаем светодиодом
