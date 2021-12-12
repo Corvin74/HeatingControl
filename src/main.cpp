@@ -59,19 +59,7 @@ void loop() {
       #endif
     }
     #ifdef WL102_ON
-      char msg0[3];
-      int tem = 1200;
-      itoa(tem, msg0, 10);                    // Преобразование температуры в массив char
-      #ifdef DEBUGRF
-        // Serial.println(F("Start RF transmit"));
-        Serial.println("Start RF transmit");
-      #endif
-      vw_send((uint8_t *)msg0, strlen(msg0)); // Передача сообщения
-      vw_wait_tx();                           // Ждем завершения передачи
-      #ifdef DEBUGRF
-        // Serial.println(F("End RF transmit"));
-        Serial.println("End RF transmit");
-      #endif
+      sendDataToServer(dataToSend);
     #endif
   }
 /*
@@ -505,7 +493,26 @@ void checkHeatingAVG(void){
     }
   }
 }
-
+/*
+ * Отправляем данные термосенсора на сервер
+ * dataToSend - температура для отправки
+ */
+uint8_t sendDataToServer(int8_t dataToSend) {
+  #ifdef WL102_ON
+    char msg0[3];
+    itoa(dataToSend, msg0, 10);                    // Преобразование температуры в массив char
+    #ifdef DEBUGRF
+      // Serial.println(F("Start RF transmit"));
+      Serial.println("Start RF transmit");
+    #endif
+    vw_send((uint8_t *)msg0, strlen(msg0)); // Передача сообщения
+    vw_wait_tx();                           // Ждем завершения передачи
+    #ifdef DEBUGRF
+      // Serial.println(F("End RF transmit"));
+      Serial.println("End RF transmit");
+    #endif
+  #endif
+}
 /*
  * Проверяем необходимость включения котла по температуре первого датчика
  */
