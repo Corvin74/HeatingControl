@@ -18,7 +18,9 @@ void setup() {
 void loop() {
   messageMQTT.topic = "";
   messageMQTT.payload = "";
-  byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
+  // byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
+  int16_t resultMeasurement;
+  int16_t resultMeasurement1;
   // float temperature;  // измеренная температура
   if (heatingControl.heatingChanged) {
   // if ((heatingControl.heatingChanged) && (messageMQTT.topic == "/countryhouse/heating/Command")) {
@@ -30,29 +32,12 @@ void loop() {
   if (currentMillis - previousUpdateTime1 > SENS1_UPTIME) {
     previousUpdateTime1 = currentMillis;
     #ifdef SENSOR1_DIGITAL
-      if (sensor1.reset() == 1)
-      {
-        sensor1.write(CMD_SKIPROM);     // пропуск ROM
-        sensor1.write(CMD_RSCRATCHPAD); // команда чтения памяти датчика
-        sensor1.read_bytes(bufData, 9); // чтение памяти датчика, 9 байтов
-        if ( OneWire::crc8(bufData, 8) == bufData[8] ) {  // проверка CRC
-          // данные правильные
-          TSensor1 =  (float)((int)bufData[0] | (((int)bufData[1]) << 8)) * 0.0625 + 0.03125;
-          #ifdef DEBUG
-            Serial.print(F("Current temperature on sensor1: "));
-            Serial.println(TSensor1);
-          #endif
-        }
-        sensor1.reset();                // сброс шины
-        #ifdef DEBUG
-          Serial.println(F("Sensor1 present, send init measurement"));
-        #endif
-        sensor1.write(CMD_SKIPROM);
-        sensor1.write(CMD_CONVERTTEMP);
-      }
+      resultMeasurement = getDigitalSensorData(sensor1);
     #endif
-    // dtostrf(mySensor1.publishSensor(), 5, 2, dataTempChar);
-    dtostrf(TSensor1, 5, 2, dataTempChar);
+    #ifdef SENSOR3_ANALOG
+      resultMeasurement1 = getLM35SensorData(SENSOR3_ANALOG);
+    #endif
+    dtostrf(resultMeasurement/100.0, 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/temperature/sensor1", dataTempChar)) {
       #ifdef DEBUG
         Serial.println(F("Publish sensor1 temperature failed"));
@@ -360,6 +345,12 @@ void initSensor(void){
       delay(1000);
     }
   #endif
+  #ifdef SENSOR3_ANALOG
+    // analogReference(INTERNAL);
+    pinMode(SENSOR3_ANALOG, INPUT);
+    Serial.println(F("Sensor3 analog present, send init measurement"));
+    delay(1000);
+  #endif
 }
 /*
  * Возвращает среднее значение темаературы
@@ -634,3 +625,46 @@ boolean reconnect(void) {
 }
 
 /*########################### End work with MQTT #############################*/
+
+int16_t getDigitalSensorData(OneWire &sensor){
+  int16_t result;
+  byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
+  if (sensor.reset() == 1)
+  {
+    sensor.write(CMD_SKIPROM);     // пропуск ROM
+    sensor.write(CMD_RSCRATCHPAD); // команда чтения памяти датчика
+    sensor.read_bytes(bufData, 9); // чтение памяти датчика, 9 байтов
+    if ( OneWire::crc8(bufData, 8) == bufData[8] ) {  // проверка CRC
+      // данные правильные
+      TSensor1 =  (float)((int)bufData[0] | (((int)bufData[1]) << 8)) * 0.0625 + 0.03125;
+      result = TSensor1 * 100;
+      #ifdef DEBUG
+        Serial.print(F("Current temperature on sensor1: "));
+        Serial.println(TSensor1);
+      #endif
+    }
+    sensor.reset();                // сброс шины
+    #ifdef DEBUG
+      Serial.println(F("Sensor1 present, send init measurement"));
+    #endif
+    sensor.write(CMD_SKIPROM);
+    sensor.write(CMD_CONVERTTEMP);
+  }
+  return result;
+}
+
+int16_t getLM35SensorData(int analogSensorPin){
+  int16_t result;
+  int reading;
+  float tempFromSensor;
+  reading = analogRead(analogSensorPin);        // получаем значение с аналогового входа A0
+  Serial.print(reading);            // отправляем в монитор порта
+  Serial.println(" RAW");
+  tempFromSensor = ( reading/1023.0 )*5.0*1000/10;
+  // tempFromSensor = reading / 9.31;          // переводим в цельсии 
+  result = tempFromSensor * 100;
+  Serial.print(tempFromSensor);            // отправляем в монитор порта
+  Serial.println(" C");
+  delay(1000);                     // ждем секунду
+  return result;
+}

@@ -72,11 +72,16 @@
 /*   Настройки термодатчиков   */
 /*#############################*/
 
-#define SENSOR1_DIGITAL
-#define SENSOR2_DIGITAL
-#define SENSOR3_DIGITAL
-#define SENSOR4_DIGITAL
-#define SENSOR5_DIGITAL
+#define SENSOR1_DIGITAL   A0
+// #define SENSOR1_ANALOG   A0
+#define SENSOR2_DIGITAL   A1
+// #define SENSOR2_ANALOG   A1
+// #define SENSOR3_DIGITAL    A2
+#define SENSOR3_ANALOG    A2
+// #define SENSOR4_DIGITAL    A3
+#define SENSOR4_ANALOG    A3
+// #define SENSOR5_DIGITAL    A4
+// #define SENSOR5_ANALOG   A4
 
 #define CMD_CONVERTTEMP    0x44
 #define CMD_RSCRATCHPAD    0xBE
@@ -286,7 +291,7 @@ void checkHeatingAVG(void);
 void checkHeatingSensor1(void);
 
 /*
- * Включаем котл если он выключен
+ * Включаем котел если он выключен
  */
 void heatingON(void);
 
@@ -328,4 +333,8 @@ uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct);
 
 
 PubSubClient client(server, 1883, callback, ethClient);
+
+int16_t getDigitalSensorData(OneWire &sensor);
+int16_t getLM35SensorData(int analogSensorPin);
+
 #endif /* MAIN_H_ */
