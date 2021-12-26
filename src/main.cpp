@@ -1,10 +1,6 @@
 #include "main.h"
 
 void setup() {
-  #ifdef DEBUG
-    Serial.println(F("Heating control setup start."));
-    Serial.println(F("Main board DIP Ver: 0.0.2"));
-  #endif
   #ifdef LCD_ON
     initLCD();
   #endif
@@ -138,6 +134,46 @@ void loop() {
   client.loop();
 }
 
+/*######################## Initialization functions #########################*/
+
+/*
+ * Инициализируем LCD экран
+ */
+void initLCD(void){
+  #ifdef DEBUG
+    Serial.println(F("Initialize LCD 2004 I2C 0x27..."));
+  #endif
+  #ifdef LCD_ON
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(3,0);
+    lcd.print(F("HeatingControl"));
+    lcd.setCursor(3,1);
+    lcd.print(F("DIP Ver: 0.0.2"));
+    delay(500);
+  #endif
+}
+/*
+ * Инициализируем работу по шине UART на скорости 9600 бит/сек.
+ */
+void initSerial(void){
+  #ifdef LCD_ON
+    lcd.setCursor(0,2);
+    lcd.print(F("Init serial...      "));
+    delay(500);
+  #endif
+  Serial.begin(9600);
+  while (!Serial) {
+    delay(100); // hang out until serial port opens
+  }
+  #ifdef DEBUG
+    Serial.println(F("Heating control setup start."));
+    Serial.println(F("Main board DIP Ver: 0.0.2"));
+    Serial.println(F("Initialize HW Serial complite..."));
+  #endif
+  flashLed(LED_PIN, 1000, 1);
+  flashLed(LED_PIN, 50, 2);
+}
 /*
  * Инициализируем переменные используемые в программе
  */
@@ -148,7 +184,7 @@ void initializeVariables(void){
     delay(500);
   #endif
   #ifdef DEBUG
-    Serial.println(F("Initialize variables..."));
+    Serial.println(F("Initializing variables..."));
   #endif
   coldStart = 1;
 
@@ -163,6 +199,9 @@ void initializeVariables(void){
   previousUpdateTime2 = 0;
   previousUpdateTime3 = 0;
 }
+
+/*###################### End Initialization functions #######################*/
+
 /*
  * Инициализируем работу портов
  */
@@ -203,25 +242,6 @@ void initializeThePeriphery(void){
     Serial.println(F("Initialize thermosensor..."));
   #endif
   initSensor();
-}
-/*
- * Инициализируем работу по шине UART на скорости 9600 бит/сек.
- */
-void initSerial(void){
-  #ifdef LCD_ON
-    lcd.setCursor(0,2);
-    lcd.print(F("Init serial...      "));
-    delay(500);
-  #endif
-  Serial.begin(9600);
-  while (!Serial) {
-    delay(100); // hang out until serial port opens
-  }
-  #ifdef DEBUG
-    Serial.println(F("Initialize HW Serial complite..."));
-  #endif
-  flashLed(LED_PIN, 1000, 1);
-  flashLed(LED_PIN, 50, 2);
 }
 /*
  * Инициализируем работу с сетью через EthernetShield W5500 с помощью библиотеки
@@ -313,23 +333,6 @@ void initNetwork(void){
   }
 }
 /*############################# End initNetwork ##############################*/
-/*
- * Инициализируем LCD экран
- */
-void initLCD(void){
-  #ifdef DEBUG
-    Serial.println(F("Initialize LCD 2004 I2C 0x27..."));
-  #endif
-  #ifdef LCD_ON
-    lcd.init();
-    lcd.backlight();
-    lcd.setCursor(3,0);
-    lcd.print(F("HeatingControl"));
-    lcd.setCursor(3,1);
-    lcd.print(F("DIP Ver: 0.0.2"));
-    delay(500);
-  #endif
-}
 /*
  * Инициализируем датчики температуры
  */
@@ -658,10 +661,8 @@ int16_t getLM35SensorData(int analogSensorPin){
   int reading;
   float tempFromSensor;
   reading = analogRead(analogSensorPin);        // получаем значение с аналогового входа A0
-  Serial.print(reading);            // отправляем в монитор порта
-  Serial.println(" RAW");
-  tempFromSensor = ( reading/1023.0 )*5.0*1000/10;
-  // tempFromSensor = reading / 9.31;          // переводим в цельсии 
+  tempFromSensor = ( reading/1023.0 )*5.07*1000/10;reading / 9.31;
+  // tempFromSensor = reading / 9.31;
   result = tempFromSensor * 100;
   Serial.print(tempFromSensor);            // отправляем в монитор порта
   Serial.println(" C");
