@@ -56,17 +56,17 @@
 #define SENS1_UPTIME 5000
 #define UPDATE_TIME1 5000
 // Температура обратки
-#define SENS2_UPTIME 6000
+#define SENS2_UPTIME 6010
 #define UPDATE_TIME2 6000
 // Температура в погребе
-#define SENS3_UPTIME 60000
+#define SENS3_UPTIME 61000
 #define UPDATE_TIME3 60000
 // Температура в холле
-#define SENS4_UPTIME 90000
+#define SENS4_UPTIME 90200
 #define UPDATE_TIME4 90000
 // Температура на кухне
-#define SENS5_UPTIME 120000
-#define UPDATE_TIME5 120000
+#define SENS5_UPTIME 93000
+#define UPDATE_TIME5 90000
 
 /*#############################*/
 /*   Настройки термодатчиков   */
@@ -83,6 +83,27 @@
 // #define SENSOR5_DIGITAL    A4
 // #define SENSOR5_ANALOG   A4
 
+#ifdef SENSOR1_DIGITAL
+  #include <OneWire.h>
+  OneWire sensor1(SENSOR1_DIGITAL);
+#endif
+#ifdef SENSOR2_DIGITAL
+  #include <OneWire.h>
+  OneWire sensor2(SENSOR2_DIGITAL);
+#endif
+#ifdef SENSOR3_DIGITAL
+  #include <OneWire.h>
+  OneWire sensor3(SENSOR3_DIGITAL);
+#endif
+#ifdef SENSOR4_DIGITAL
+  #include <OneWire.h>
+  OneWire sensor4(SENSOR4_DIGITAL);
+#endif
+#ifdef SENSOR4_DIGITAL
+  #include <OneWire.h>
+  OneWire sensor5(SENSOR5_DIGITAL);
+#endif
+
 #define CMD_CONVERTTEMP    0x44
 #define CMD_RSCRATCHPAD    0xBE
 #define CMD_WSCRATCHPAD    0x4E
@@ -95,15 +116,7 @@
 #define CMD_SKIPROM        0xCC
 #define CMD_ALARMSEARCH    0xEC
 
-#ifdef SENSOR1_DIGITAL
-  #include <OneWire.h>
-  OneWire sensor1(A0);
-#endif
-// uint8_t ds18b20Sensor1[8] = { 0x28, 0xFF, 0xBC, 0xB4, 0xB2, 0x16, 0x05, 0x33 };
-// uint8_t ds18b20Sensor2[8] = { 0x28, 0x4B, 0x18, 0x43, 0x98, 0x01, 0x02, 0xCC };
-// uint8_t ds18b20Sensor3[8] = { 0x28, 0xFF, 0xAF, 0xA9, 0xB2, 0x16, 0x05, 0xA4 };
-// uint8_t ds18b20Sensor4[8] = { 0x28, 0x88, 0x21, 0x43, 0x98, 0x01, 0x02, 0x7D };
-// uint8_t ds18b20Sensor5[8] = { 0x28, 0x15, 0x00, 0x43, 0x98, 0x0F, 0x00, 0xD3 };
+// uint8_t ds18b20Sensor[8] = { 0x28, 0xFF, 0xBC, 0xB4, 0xB2, 0x16, 0x05, 0x33 };
 
 /*##############################*/
 /*        Настройки реле        */
@@ -174,6 +187,14 @@ struct MessageMQTT {
 	String payload;	// Состояние котла
 };
 
+struct TSensorData {
+  int16_t tSensor1; // Данные с первого датчика температуры
+  int16_t tSensor2; // Данные с второго датчика температуры
+  int16_t tSensor3; // Данные с третьего датчика температуры
+  int16_t tSensor4; // Данные с четвертого датчика температуры
+  int16_t tSensor5; // Данные с пятого датчика температуры
+};
+
 /*##############################*/
 /*        Настройки сети        */
 /*##############################*/
@@ -207,14 +228,18 @@ byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDA, 0x01 };
 // Структура для работы с MQTT сервером
 MessageMQTT messageMQTT;
 // IP-адресс MQTT брокера в домашней сети
-IPAddress server(172, 20, 10, 131);
+// IPAddress server(172, 20, 10, 131);
 // IP-адресс MQTT брокера в рабочей сети
-// IPAddress server(172, 16, 6, 40);
+IPAddress server(172, 16, 6, 40);
 // IP-адресс MQTT брокера в дачной сети
 // IPAddress server(172, 25, 24, 119);
 
 // Уставновить Логин и Пароль для подключения к MQTT брокеру
-const char* mqtt_username = "corvin";
+// Home
+// const char* mqtt_username = "corvin";
+// const char* mqtt_password = "eTx1243";
+// Work
+const char* mqtt_username = "admin";
 const char* mqtt_password = "eTx1243";
 
 EthernetClient ethClient;
@@ -225,6 +250,7 @@ EthernetClient ethClient;
 // Признак первого запуска
 uint8_t coldStart;
 
+TSensorData sensorData;
 /***************************************************************/
 /*          Описание функций используемых в программе          */
 /***************************************************************/
@@ -323,9 +349,11 @@ float TSensor3;
 float TSensor4;
 float TSensor5;
 // Переменные для хранения времени последнего обновления данных
-unsigned long previousUpdateTime1 = 0;
-unsigned long previousUpdateTime2 = 0;
-unsigned long previousUpdateTime3 = 0;
+unsigned long previousUpdateTime1;
+unsigned long previousUpdateTime2;
+unsigned long previousUpdateTime3;
+unsigned long previousUpdateTime4;
+unsigned long previousUpdateTime5;
 
 HeatingControl heatingControl;
 uint8_t saveSettingsToEEPROM(HeatingControl* heatingStruct);
@@ -334,7 +362,7 @@ uint8_t restoreSettingsFromEEPROM(HeatingControl* heatingStruct);
 
 PubSubClient client(server, 1883, callback, ethClient);
 
-int16_t getDigitalSensorData(OneWire &sensor);
-int16_t getLM35SensorData(int analogSensorPin);
+int16_t getDigitalSensorData(OneWire &sensor, uint8_t portNumber);
+int16_t getLM35SensorData(int analogSensorPin, uint8_t portNumber);
 
 #endif /* MAIN_H_ */

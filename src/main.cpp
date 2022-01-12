@@ -14,9 +14,10 @@ void setup() {
 void loop() {
   messageMQTT.topic = "";
   messageMQTT.payload = "";
+
   // byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
-  int16_t resultMeasurement;
-  int16_t resultMeasurement1;
+  // int16_t resultMeasurement;
+  // int16_t resultMeasurement1;
   // float temperature;  // измеренная температура
   if (heatingControl.heatingChanged) {
   // if ((heatingControl.heatingChanged) && (messageMQTT.topic == "/countryhouse/heating/Command")) {
@@ -28,12 +29,12 @@ void loop() {
   if (currentMillis - previousUpdateTime1 > SENS1_UPTIME) {
     previousUpdateTime1 = currentMillis;
     #ifdef SENSOR1_DIGITAL
-      resultMeasurement = getDigitalSensorData(sensor1);
+      sensorData.tSensor1 = getDigitalSensorData(sensor1, 1);
     #endif
-    #ifdef SENSOR3_ANALOG
-      resultMeasurement1 = getLM35SensorData(SENSOR3_ANALOG);
+    #ifdef SENSOR1_ANALOG
+      sensorData.tSensor1 = getLM35SensorData(SENSOR1_ANALOG, 1);
     #endif
-    dtostrf(resultMeasurement/100.0, 5, 2, dataTempChar);
+    dtostrf(sensorData.tSensor1/100.0, 5, 2, dataTempChar);
     if (!client.publish("/countryhouse/temperature/sensor1", dataTempChar)) {
       #ifdef DEBUG
         Serial.println(F("Publish sensor1 temperature failed"));
@@ -43,27 +44,90 @@ void loop() {
       sendDataToServer(dataToSend);
     #endif
   }
-/*
+
   if (currentMillis - previousUpdateTime2 > SENS2_UPTIME) {
     previousUpdateTime2 = currentMillis;
-    // dtostrf(mySensor2.publishSensor(), 5, 2, dataTempChar);
-    if (!client.publish("/countryhouse/ds18b20_2", dataTempChar)) {
+    #ifdef SENSOR2_DIGITAL
+      sensorData.tSensor2 = getDigitalSensorData(sensor2, 2);
+    #endif
+    #ifdef SENSOR2_ANALOG
+      sensorData.tSensor2 = getLM35SensorData(SENSOR2_ANALOG, 2);
+    #endif
+    dtostrf(sensorData.tSensor2/100.0, 5, 2, dataTempChar);
+    if (!client.publish("/countryhouse/temperature/sensor2", dataTempChar)) {
       #ifdef DEBUG
         Serial.println(F("Publish sensor2 temperature failed"));
       #endif
     }
-    // heatingControl.curentAverageTemperature = calcAvarage(mySensor1.currentTemperature, mySensor2.currentTemperature);
-    checkHeatingSensor1();
+    #ifdef WL102_ON
+      sendDataToServer(dataToSend);
+    #endif
   }
+
   if (currentMillis - previousUpdateTime3 > SENS3_UPTIME) {
     previousUpdateTime3 = currentMillis;
-    // dtostrf(mySensor3.publishSensor(), 5, 2, dataTempChar);
-    if (!client.publish("/countryhouse/ds18b20_3", dataTempChar)) {
-      #ifdef DEBUG
-        Serial.println(F("Publish sensor3 temperature failed"));
+    #ifdef SENSOR3_DIGITAL
+      sensorData.tSensor3 = getDigitalSensorData(sensor3, 3);
+    #endif
+    #ifdef SENSOR3_ANALOG
+      sensorData.tSensor3 = getLM35SensorData(SENSOR3_ANALOG, 3);
+    #endif
+    if (sensorData.tSensor5 != -85) {
+      dtostrf(sensorData.tSensor3/100.0, 5, 2, dataTempChar);
+      if (!client.publish("/countryhouse/temperature/sensor3", dataTempChar)) {
+        #ifdef DEBUG
+          Serial.println(F("Publish sensor3 temperature failed"));
+        #endif
+      }
+      #ifdef WL102_ON
+        sendDataToServer(dataToSend);
       #endif
     }
   }
+
+  if (currentMillis - previousUpdateTime4 > SENS4_UPTIME) {
+    previousUpdateTime4 = currentMillis;
+    #ifdef SENSOR4_DIGITAL
+      sensorData.tSensor4 = getDigitalSensorData(sensor4, 4);
+    #endif
+    #ifdef SENSOR4_ANALOG
+      sensorData.tSensor4 = getLM35SensorData(SENSOR4_ANALOG, 4);
+    #endif
+    if (sensorData.tSensor5 != -85) {
+      dtostrf(sensorData.tSensor4/100.0, 5, 2, dataTempChar);
+      if (!client.publish("/countryhouse/temperature/sensor2", dataTempChar)) {
+        #ifdef DEBUG
+          Serial.println(F("Publish sensor2 temperature failed"));
+        #endif
+      }
+      #ifdef WL102_ON
+        sendDataToServer(dataToSend);
+      #endif
+    }
+  }
+
+  if (currentMillis - previousUpdateTime5 > SENS5_UPTIME) {
+    previousUpdateTime5 = currentMillis;
+    #ifdef SENSOR5_DIGITAL
+      sensorData.tSensor5 = getDigitalSensorData(sensor5, 1);
+    #endif
+    #ifdef SENSOR5_ANALOG
+      sensorData.tSensor5 = getLM35SensorData(SENSOR5_ANALOG, 5);
+    #endif
+    if (sensorData.tSensor5 != -85) {
+      dtostrf(sensorData.tSensor5/100.0, 5, 2, dataTempChar);
+      if (!client.publish("/countryhouse/temperature/sensor5", dataTempChar)) {
+        #ifdef DEBUG
+          Serial.println(F("Publish sensor5 temperature failed"));
+        #endif
+      }
+      #ifdef WL102_ON
+        sendDataToServer(dataToSend);
+      #endif
+    }
+  }
+
+/*
   if ((messageMQTT.topic == "/countryhouse/heating/Command") && !(heatingControl.heatingChanged)) {
     #ifdef DEBUG
       Serial.print("Topic: ");
@@ -198,6 +262,15 @@ void initializeVariables(void){
   previousUpdateTime1 = 0;
   previousUpdateTime2 = 0;
   previousUpdateTime3 = 0;
+  previousUpdateTime4 = 0;
+  previousUpdateTime5 = 0;
+
+  sensorData.tSensor1 = -85;
+  sensorData.tSensor2 = -85;
+  sensorData.tSensor3 = -85;
+  sensorData.tSensor4 = -85;
+  sensorData.tSensor5 = -85;
+
 }
 
 /*###################### End Initialization functions #######################*/
@@ -341,17 +414,96 @@ void initSensor(void){
     if (sensor1.reset() == 1)
     {
       #ifdef DEBUG
-        Serial.println(F("Sensor1 present, send init measurement"));
+        Serial.println(F("Digital sensor 1 present, send init measurement"));
       #endif
       sensor1.write(CMD_SKIPROM);
       sensor1.write(CMD_CONVERTTEMP);
       delay(1000);
     }
   #endif
+  #ifdef SENSOR2_DIGITAL
+    if (sensor2.reset() == 1)
+    {
+      #ifdef DEBUG
+        Serial.println(F("Digital sensor 2 present, send init measurement"));
+      #endif
+      sensor2.write(CMD_SKIPROM);
+      sensor2.write(CMD_CONVERTTEMP);
+      delay(1000);
+    }
+  #endif
+  #ifdef SENSOR3_DIGITAL
+    if (sensor3.reset() == 1)
+    {
+      #ifdef DEBUG
+        Serial.println(F("Digital sensor 3 present, send init measurement"));
+      #endif
+      sensor3.write(CMD_SKIPROM);
+      sensor3.write(CMD_CONVERTTEMP);
+      delay(1000);
+    }
+  #endif
+  #ifdef SENSOR4_DIGITAL
+    if (sensor4.reset() == 1)
+    {
+      #ifdef DEBUG
+        Serial.println(F("Digital sensor 4 present, send init measurement"));
+      #endif
+      sensor1.write(CMD_SKIPROM);
+      sensor1.write(CMD_CONVERTTEMP);
+      delay(1000);
+    }
+  #endif
+  #ifdef SENSOR5_DIGITAL
+    if (sensor5.reset() == 1)
+    {
+      #ifdef DEBUG
+        Serial.println(F("Digital sensor 5 present, send init measurement"));
+      #endif
+      sensor5.write(CMD_SKIPROM);
+      sensor5.write(CMD_CONVERTTEMP);
+      delay(1000);
+    }
+  #endif
+
+  #ifdef SENSOR1_ANALOG
+    // analogReference(INTERNAL);
+    pinMode(SENSOR1_ANALOG, INPUT);
+    #ifdef DEBUG
+      Serial.println(F("Analog sensor 1 analog present, send init measurement"));
+    #endif
+    delay(1000);
+  #endif
+  #ifdef SENSOR2_ANALOG
+    // analogReference(INTERNAL);
+    pinMode(SENSOR2_ANALOG, INPUT);
+    #ifdef DEBUG
+      Serial.println(F("Analog sensor 2 analog present, send init measurement"));
+    #endif
+    delay(1000);
+  #endif
   #ifdef SENSOR3_ANALOG
     // analogReference(INTERNAL);
     pinMode(SENSOR3_ANALOG, INPUT);
-    Serial.println(F("Sensor3 analog present, send init measurement"));
+    #ifdef DEBUG
+      Serial.println(F("Analog sensor 3 analog present, send init measurement"));
+    #endif
+    delay(500);
+  #endif
+  #ifdef SENSOR4_ANALOG
+    // analogReference(INTERNAL);
+    pinMode(SENSOR4_ANALOG, INPUT);
+    #ifdef DEBUG
+      Serial.println(F("Analog sensor 4 analog present, send init measurement"));
+    #endif
+    delay(500);
+  #endif
+  #ifdef SENSOR5_ANALOG
+    // analogReference(INTERNAL);
+    pinMode(SENSOR5_ANALOG, INPUT);
+    #ifdef DEBUG
+      Serial.println(F("Analog sensor 5 analog present, send init measurement"));
+    #endif
     delay(1000);
   #endif
 }
@@ -506,6 +658,7 @@ uint8_t sendDataToServer(int8_t dataToSend) {
       Serial.println("End RF transmit");
     #endif
   #endif
+  return 0;
 }
 /*
  * Проверяем необходимость включения котла по температуре первого датчика
@@ -629,8 +782,9 @@ boolean reconnect(void) {
 
 /*########################### End work with MQTT #############################*/
 
-int16_t getDigitalSensorData(OneWire &sensor){
+int16_t getDigitalSensorData(OneWire &sensor, uint8_t portNumber){
   int16_t result;
+  float TSensor;
   byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
   if (sensor.reset() == 1)
   {
@@ -639,16 +793,18 @@ int16_t getDigitalSensorData(OneWire &sensor){
     sensor.read_bytes(bufData, 9); // чтение памяти датчика, 9 байтов
     if ( OneWire::crc8(bufData, 8) == bufData[8] ) {  // проверка CRC
       // данные правильные
-      TSensor1 =  (float)((int)bufData[0] | (((int)bufData[1]) << 8)) * 0.0625 + 0.03125;
-      result = TSensor1 * 100;
+      TSensor =  (float)((int)bufData[0] | (((int)bufData[1]) << 8)) * 0.0625 + 0.03125;
+      result = TSensor * 100;
       #ifdef DEBUG
-        Serial.print(F("Current temperature on sensor1: "));
-        Serial.println(TSensor1);
+        Serial.print(F("Current temperature on digital sensor"));
+        Serial.print(portNumber);
+        Serial.print(F(": "));
+        Serial.println(TSensor);
       #endif
     }
     sensor.reset();                // сброс шины
     #ifdef DEBUG
-      Serial.println(F("Sensor1 present, send init measurement"));
+      Serial.println(F("Digital sensor present, send init measurement"));
     #endif
     sensor.write(CMD_SKIPROM);
     sensor.write(CMD_CONVERTTEMP);
@@ -656,16 +812,30 @@ int16_t getDigitalSensorData(OneWire &sensor){
   return result;
 }
 
-int16_t getLM35SensorData(int analogSensorPin){
+int16_t getLM35SensorData(int analogSensorPin, uint8_t portNumber){
   int16_t result;
   int reading;
-  float tempFromSensor;
+  float TSensor;
+  // float tempFromSensor;
   reading = analogRead(analogSensorPin);        // получаем значение с аналогового входа A0
-  tempFromSensor = ( reading/1023.0 )*5.07*1000/10;reading / 9.31;
+  #ifdef DEBUG
+    Serial.print(F("RAW data from analog sensor"));
+    Serial.print(portNumber);
+    Serial.print(F(": "));
+    Serial.println(reading);
+    Serial.println("");
+  #endif
+  TSensor = ( reading/1023.0 )*5.04*1000/10;
+  // reading / 9.31;
   // tempFromSensor = reading / 9.31;
-  result = tempFromSensor * 100;
-  Serial.print(tempFromSensor);            // отправляем в монитор порта
-  Serial.println(" C");
+  result = TSensor * 100;
+  #ifdef DEBUG
+    Serial.print(F("Current temperature on analog sensor"));
+    Serial.print(portNumber);
+    Serial.print(F(": "));
+    Serial.println(TSensor);
+    Serial.println("");
+  #endif
   delay(1000);                     // ждем секунду
   return result;
 }
