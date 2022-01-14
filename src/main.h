@@ -60,12 +60,12 @@
 #define UPDATE_TIME2 6000
 // Температура в погребе
 #define SENS3_UPTIME 61000
-#define UPDATE_TIME3 60000
+#define UPDATE_TIME3 90000
 // Температура в холле
-#define SENS4_UPTIME 90200
+#define SENS4_UPTIME 62100
 #define UPDATE_TIME4 90000
 // Температура на кухне
-#define SENS5_UPTIME 93000
+#define SENS5_UPTIME 63200
 #define UPDATE_TIME5 90000
 
 /*#############################*/
