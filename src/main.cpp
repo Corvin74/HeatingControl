@@ -798,6 +798,10 @@ boolean reconnect(void) {
 int16_t getDigitalSensorData(OneWire &sensor, uint8_t portNumber){
   int16_t result;
   float TSensor;
+  #ifdef DEBUG
+    Serial.print(F("Start read temperature on sensor"));
+    Serial.println(portNumber);
+  #endif
   byte bufData[9] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  // буфер данных
   if (sensor.reset() == 1)
   {

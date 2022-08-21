@@ -56,8 +56,8 @@
 #define SENS1_UPTIME 5000
 #define UPDATE_TIME1 5000
 // Температура обратки
-#define SENS2_UPTIME 6010
-#define UPDATE_TIME2 6000
+#define SENS2_UPTIME 8080
+#define UPDATE_TIME2 8080
 // Температура в погребе
 #define SENS3_UPTIME 61000
 #define UPDATE_TIME3 90000
@@ -76,10 +76,10 @@
 // #define SENSOR1_ANALOG   A0
 #define SENSOR2_DIGITAL   A1
 // #define SENSOR2_ANALOG   A1
-// #define SENSOR3_DIGITAL    A2
-#define SENSOR3_ANALOG    A2
+#define SENSOR3_DIGITAL    A2
+// #define SENSOR3_ANALOG    A2
 // #define SENSOR4_DIGITAL    A3
-#define SENSOR4_ANALOG    A3
+// #define SENSOR4_ANALOG    A3
 // #define SENSOR5_DIGITAL    A4
 // #define SENSOR5_ANALOG   A4
 
@@ -230,17 +230,17 @@ MessageMQTT messageMQTT;
 // IP-адресс MQTT брокера в домашней сети
 // IPAddress server(172, 20, 10, 131);
 // IP-адресс MQTT брокера в рабочей сети
-IPAddress server(172, 16, 6, 40);
+// IPAddress server(172, 16, 6, 40);
 // IP-адресс MQTT брокера в дачной сети
-// IPAddress server(172, 25, 24, 119);
+IPAddress server(172, 25, 24, 119);
 
 // Уставновить Логин и Пароль для подключения к MQTT брокеру
 // Home
-// const char* mqtt_username = "corvin";
-// const char* mqtt_password = "eTx1243";
-// Work
-const char* mqtt_username = "admin";
+const char* mqtt_username = "corvin";
 const char* mqtt_password = "eTx1243";
+// Work
+// const char* mqtt_username = "admin";
+// const char* mqtt_password = "eTx1243";
 
 EthernetClient ethClient;
 
