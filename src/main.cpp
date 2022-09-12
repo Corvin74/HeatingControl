@@ -5,7 +5,7 @@
 #define RS485_TX 9
 #define RS485_DIR 2
 
-SoftwareSerial rs485Port(RS485_TX,RS485_RX);
+SoftwareSerial rs485Port(RS485_RX,RS485_TX);
 // // BMP180 start
 // Adafruit_BMP085 bmp;
 // // BMP180 end
@@ -14,13 +14,6 @@ void setup() {
   #ifdef LCD_ON
     initLCD();
   #endif
-  rs485Port.begin(9600);
-  pinMode(RS485_TX,   OUTPUT);
-  digitalWrite(RS485_TX, LOW);
-  pinMode(RS485_RX,   INPUT);
-  pinMode(RS485_DIR,   OUTPUT);
-  digitalWrite(RS485_DIR, LOW);
-
   initSerial();
   initializeVariables();
   initializeThePeriphery();
@@ -97,14 +90,15 @@ void loop() {
       Serial.print(F("errorCount = "));
       Serial.println(messageMQTT.errorCount);
       // RS485
-      rs485Port.listen();
+      // rs485Port.listen();
       digitalWrite(RS485_DIR, HIGH);
       delay(1);
-      rs485Port.print("errorCount = ");
-      rs485Port.println(messageMQTT.errorCount);
-      delay(1);
+      // rs485Port.println("errorCount = ");
+      // rs485Port.println("123");
+      rs485Port.println(millis());
+      // delay(1);
       digitalWrite(RS485_DIR, LOW);
-      delay(500);
+      // delay(500);
     #endif
     if (messageMQTT.errorCount > 4)
     {
@@ -383,6 +377,14 @@ void initSerial(void){
   while (!Serial) {
     delay(100); // hang out until serial port opens
   }
+  Serial.println(F("Begin setup RS485"));
+  rs485Port.begin(4800);
+  // pinMode(RS485_TX,   OUTPUT);
+  // digitalWrite(RS485_TX, LOW);
+  // pinMode(RS485_RX,   INPUT);
+  pinMode(RS485_DIR,   OUTPUT);
+  digitalWrite(RS485_DIR, LOW);
+  Serial.println(F("End setup RS485"));
   #ifdef DEBUG
     Serial.println(F("Heating control setup start."));
     Serial.println(F("Main board DIP Ver: 0.0.2"));
