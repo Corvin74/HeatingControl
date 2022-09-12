@@ -9,6 +9,9 @@
 #define MAIN_H_
 
 #include <Arduino.h>
+// BMP180 start
+// #include <Adafruit_BMP085.h>
+// BMP180 end
 
 /**************************************************************/
 /*    Настройка основных параметров: сеть, датчики, etc...    */
@@ -56,17 +59,17 @@
 #define SENS1_UPTIME 5000
 #define UPDATE_TIME1 5000
 // Температура обратки
-#define SENS2_UPTIME 8080
-#define UPDATE_TIME2 8080
+#define SENS2_UPTIME 6080
+#define UPDATE_TIME2 6080
 // Температура в погребе
-#define SENS3_UPTIME 61000
-#define UPDATE_TIME3 90000
+#define SENS3_UPTIME 67100
+#define UPDATE_TIME3 67100
 // Температура в холле
-#define SENS4_UPTIME 62100
-#define UPDATE_TIME4 90000
+#define SENS4_UPTIME 68210
+#define UPDATE_TIME4 68210
 // Температура на кухне
-#define SENS5_UPTIME 63200
-#define UPDATE_TIME5 90000
+#define SENS5_UPTIME 69200
+#define UPDATE_TIME5 69200
 
 /*#############################*/
 /*   Настройки термодатчиков   */
@@ -78,7 +81,7 @@
 // #define SENSOR2_ANALOG   A1
 #define SENSOR3_DIGITAL    A2
 // #define SENSOR3_ANALOG    A2
-// #define SENSOR4_DIGITAL    A3
+#define SENSOR4_DIGITAL    A3
 // #define SENSOR4_ANALOG    A3
 // #define SENSOR5_DIGITAL    A4
 // #define SENSOR5_ANALOG   A4
@@ -99,7 +102,7 @@
   #include <OneWire.h>
   OneWire sensor4(SENSOR4_DIGITAL);
 #endif
-#ifdef SENSOR4_DIGITAL
+#ifdef SENSOR5_DIGITAL
   #include <OneWire.h>
   OneWire sensor5(SENSOR5_DIGITAL);
 #endif
@@ -146,7 +149,7 @@
 #define LED_PIN 13                // Пин 13(PB5) с подключенным контрольным светодиодом
 // Признак подключения LCD экрана
 #ifndef LCD_ON
-  // #define LCD_ON
+  #define LCD_ON
   #undef LCD_ON
 #endif
 
@@ -157,6 +160,7 @@
 /*###############################*/
 #include <SPI.h>
 #include <Ethernet2.h>
+// #include <ICMPPing.h>
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include "thermosensors.h"
@@ -179,12 +183,13 @@ struct HeatingControl {
 	float targetTemperature;	// Текущая целевая температура
 	float hysteresis;	// Допустимый гистерезис целевой температуры
 	uint8_t heatingAuto;		// Авторежим
-  uint8_t heatingChanged;
+  uint8_t heatingChanged; // Признак изменения уставки
 };
 
 struct MessageMQTT {
 	String topic;		// Текущая средняя температура в доме
 	String payload;	// Состояние котла
+  uint8_t errorCount; // Колличетво ошибок при передачи
 };
 
 struct TSensorData {

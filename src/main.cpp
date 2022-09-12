@@ -1,20 +1,46 @@
 #include "main.h"
+#include <SoftwareSerial.h>
+
+#define RS485_RX 8
+#define RS485_TX 9
+#define RS485_DIR 2
+
+SoftwareSerial rs485Port(RS485_TX,RS485_RX);
+// // BMP180 start
+// Adafruit_BMP085 bmp;
+// // BMP180 end
 
 void setup() {
   #ifdef LCD_ON
     initLCD();
   #endif
+  rs485Port.begin(9600);
+  pinMode(RS485_TX,   OUTPUT);
+  digitalWrite(RS485_TX, LOW);
+  pinMode(RS485_RX,   INPUT);
+  pinMode(RS485_DIR,   OUTPUT);
+  digitalWrite(RS485_DIR, LOW);
+
   initSerial();
   initializeVariables();
   initializeThePeriphery();
+  // BMP180 start
+  // if (!bmp.begin()) {
+  //   Serial.println(F("Could not find a valid BMP085 sensor, check wiring!"));
+  //   while (1){
+
+  //   }
+  // }
+  // BMP180 end
   initNetwork();
   reconnect(); // Подключение к брокеру, подписка на прописанные выше темы
+  #ifdef LCD_ON
+    lcd.clear();
+    lcd.backlight();
+  #endif
 }
 
 void loop() {
-  messageMQTT.topic = "";
-  messageMQTT.payload = "";
-
   if (heatingControl.heatingChanged) {
   // if ((heatingControl.heatingChanged) && (messageMQTT.topic == "/countryhouse/heating/Command")) {
     heatingControl.heatingChanged = 0;
@@ -23,6 +49,68 @@ void loop() {
   // unsigned long currentMillis = millis();
 
   if (millis() - previousUpdateTime1 > SENS1_UPTIME) {
+    // BMP180 start
+    //   Serial.println();
+    //   Serial.print(F("Temperature = "));
+    //   Serial.print(bmp.readTemperature());
+    //   Serial.println(F(" *C"));
+      
+    //   Serial.print(F("Pressure = "));
+    //   Serial.print((float)0.0075*bmp.readPressure());
+    //   Serial.println(F(" mmHg"));
+      
+    //   // Calculate altitude assuming 'standard' barometric
+    //   // pressure of 1013.25 millibar = 101325 Pascal
+    //   Serial.print(F("Altitude = "));
+    //   Serial.print(bmp.readAltitude());
+    //   Serial.println(F(" meters"));
+
+    //   Serial.print(F("Pressure at sealevel (calculated) = "));
+    //   Serial.print(bmp.readSealevelPressure());
+    //   Serial.println(F(" Pa"));
+
+    // // you can get a more precise measurement of altitude
+    // // if you know the current sea level pressure which will
+    // // vary with weather and such. If it is 1015 millibars
+    // // that is equal to 101500 Pascals.
+    //   Serial.print(F("Real altitude = "));
+    //   Serial.print(bmp.readAltitude(101500));
+    //   Serial.println(F(" meters"));
+    // BMP180 end
+    // Serial.println();
+      // Serial.println(F("Relay 1 ON"));
+      // digitalWrite(RELAY1_PIN, LOW);
+      // delay(250);
+      // Serial.println(F("Relay 2 ON"));
+      // digitalWrite(RELAY2_PIN, LOW);
+      // delay(250);
+      // Serial.println(F("Relay 3 ON"));
+      // digitalWrite(RELAY3_PIN, LOW);
+      // delay(250);
+      // Serial.println(F("Relay 4 ON"));
+      // digitalWrite(RELAY4_PIN, LOW);
+      // delay(250);
+      // Serial.println(F("Relay 5 ON"));
+      // digitalWrite(RELAY5_PIN, LOW);
+      // delay(250);
+    #ifdef DEBUG
+      Serial.print(F("errorCount = "));
+      Serial.println(messageMQTT.errorCount);
+      // RS485
+      rs485Port.listen();
+      digitalWrite(RS485_DIR, HIGH);
+      delay(1);
+      rs485Port.print("errorCount = ");
+      rs485Port.println(messageMQTT.errorCount);
+      delay(1);
+      digitalWrite(RS485_DIR, LOW);
+      delay(500);
+    #endif
+    if (messageMQTT.errorCount > 4)
+    {
+      Serial.println(F("Relay 1 ON"));
+      digitalWrite(RELAY1_PIN, LOW);
+    }
     #ifdef SENSOR1_DIGITAL
       sensorData.tSensor1 = getDigitalSensorData(sensor1, 1);
       if (sensorData.tSensor1 == 8503) {
@@ -36,11 +124,27 @@ void loop() {
       sensorData.tSensor1 = getLM35SensorData(SENSOR1_ANALOG, 1);
     #endif
     if (sensorData.tSensor1 != -85) {
+      #ifdef DEBUG
+        // Serial.println(F("Relay 1 ON"));
+        // digitalWrite(RELAY1_PIN, LOW);
+      #endif
+
       dtostrf(sensorData.tSensor1/100.0, 5, 2, dataTempChar);
+      #ifdef LCD_ON
+        lcd.setCursor(0,1);
+        lcd.print("Sensor 1: ");
+        lcd.print(dataTempChar);
+        delay(50);
+      #endif
       if (!client.publish("/countryhouse/temperature/sensor1", dataTempChar)) {
+        messageMQTT.errorCount++;
         #ifdef DEBUG
           Serial.println(F("Publish sensor1 temperature failed"));
         #endif
+      } else {
+          messageMQTT.topic = "";
+          messageMQTT.payload = "";
+          messageMQTT.errorCount = 0;
       }
       #ifdef WL102_ON
         sendDataToServer(dataToSend);
@@ -63,11 +167,26 @@ void loop() {
       sensorData.tSensor2 = getLM35SensorData(SENSOR2_ANALOG, 2);
     #endif
     if (sensorData.tSensor2 != -85) {
+      #ifdef DEBUG
+        // Serial.println(F("Relay 1 OFF"));
+        // digitalWrite(RELAY1_PIN, HIGH);
+      #endif
       dtostrf(sensorData.tSensor2/100.0, 5, 2, dataTempChar);
+      #ifdef LCD_ON
+        lcd.setCursor(0,2);
+        lcd.print("Sensor 2: ");
+        lcd.print(dataTempChar);
+        delay(50);
+      #endif
       if (!client.publish("/countryhouse/temperature/sensor2", dataTempChar)) {
+        messageMQTT.errorCount++;
         #ifdef DEBUG
           Serial.println(F("Publish sensor2 temperature failed"));
         #endif
+      } else {
+          messageMQTT.topic = "";
+          messageMQTT.payload = "";
+          messageMQTT.errorCount = 0;
       }
       #ifdef WL102_ON
         sendDataToServer(dataToSend);
@@ -86,10 +205,21 @@ void loop() {
     #endif
     if (sensorData.tSensor3 != -85) {
       dtostrf(sensorData.tSensor3/100.0, 5, 2, dataTempChar);
+      #ifdef LCD_ON
+        lcd.setCursor(0,3);
+        lcd.print("Sensor 3: ");
+        lcd.print(dataTempChar);
+        delay(50);
+      #endif
       if (!client.publish("/countryhouse/temperature/sensor3", dataTempChar)) {
+        messageMQTT.errorCount++;
         #ifdef DEBUG
           Serial.println(F("Publish sensor3 temperature failed"));
         #endif
+      } else {
+          messageMQTT.topic = "";
+          messageMQTT.payload = "";
+          messageMQTT.errorCount = 0;
       }
       #ifdef WL102_ON
         sendDataToServer(dataToSend);
@@ -107,11 +237,16 @@ void loop() {
     #endif
     if (sensorData.tSensor4 != -85) {
       // dtostrf(sensorData.tSensor4/100.0, 5, 2, dataTempChar);
-      dtostrf((sensorData.tSensor4/100.0)/10.0, 5, 2, dataTempChar);
+      dtostrf(sensorData.tSensor4/100.0, 5, 2, dataTempChar);
       if (!client.publish("/countryhouse/temperature/sensor4", dataTempChar)) {
+        messageMQTT.errorCount++;
         #ifdef DEBUG
-          Serial.println(F("Publish sensor2 temperature failed"));
+          Serial.println(F("Publish sensor4 temperature failed"));
         #endif
+      } else {
+          messageMQTT.topic = "";
+          messageMQTT.payload = "";
+          messageMQTT.errorCount = 0;
       }
       #ifdef WL102_ON
         sendDataToServer(dataToSend);
@@ -130,9 +265,14 @@ void loop() {
     if (sensorData.tSensor5 != -85) {
       dtostrf(sensorData.tSensor5/100.0, 5, 2, dataTempChar);
       if (!client.publish("/countryhouse/temperature/sensor5", dataTempChar)) {
+        messageMQTT.errorCount++;
         #ifdef DEBUG
           Serial.println(F("Publish sensor5 temperature failed"));
         #endif
+      } else {
+          messageMQTT.topic = "";
+          messageMQTT.payload = "";
+          messageMQTT.errorCount = 0;
       }
       #ifdef WL102_ON
         sendDataToServer(dataToSend);
@@ -284,6 +424,9 @@ void initializeVariables(void){
   sensorData.tSensor4 = -85;
   sensorData.tSensor5 = -85;
 
+  messageMQTT.topic = "";
+  messageMQTT.payload = "";
+  messageMQTT.errorCount = 0;
 }
 
 /*###################### End Initialization functions #######################*/
@@ -320,8 +463,14 @@ void initializeThePeriphery(void){
   #endif
   digitalWrite(RELAY1_PIN, HIGH);
   digitalWrite(RELAY2_PIN, HIGH);
+  digitalWrite(RELAY3_PIN, HIGH);
+  digitalWrite(RELAY4_PIN, HIGH);
+  digitalWrite(RELAY5_PIN, HIGH);
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
+  pinMode(RELAY3_PIN, OUTPUT);
+  pinMode(RELAY4_PIN, OUTPUT);
+  pinMode(RELAY5_PIN, OUTPUT);
   flashLed(LED_PIN, 1000, 1);
   flashLed(LED_PIN, 50, 2);
   #ifdef DEBUG
@@ -339,7 +488,7 @@ void initNetwork(void){
     lcd.setCursor(0,2);
     lcd.print("Init ethernet...   ");
     delay(500);
-    lcd.noBacklight();
+    // lcd.noBacklight();
   #endif
   #ifdef DEBUG
     Serial.println(F("Start initialize ethernet..."));
@@ -370,7 +519,7 @@ void initNetwork(void){
       lcd.setCursor(0,2);
       lcd.print("My DHCP IP address: ");
       delay(500);
-      lcd.noBacklight();
+      // lcd.noBacklight();
     #endif
   #else
     Ethernet.begin(mac,ip,ip_dns,ip_gateway);
@@ -732,13 +881,64 @@ void callback(char* topic, byte* payload, uint16_t length){
   for (uint16_t i = 0; i < length; i++) {                // отправляем данные из топика
     messageMQTT.payload += String((char)payload[i]);
   }
+  // Рэле 1
+  if (messageMQTT.topic == "/countryhouse/relay/relay1")
+  {
+    if (messageMQTT.payload == "ON")
+    {
+      digitalWrite(RELAY1_PIN, LOW);
+    } else {
+      digitalWrite(RELAY1_PIN, HIGH);
+    }
+  }
+  // Рэле 2
+  if (messageMQTT.topic == "/countryhouse/relay/relay2")
+  {
+    if (messageMQTT.payload == "ON")
+    {
+      digitalWrite(RELAY2_PIN, LOW);
+    } else {
+      digitalWrite(RELAY2_PIN, HIGH);
+    }
+  }
+  // Рэле 3
+  if (messageMQTT.topic == "/countryhouse/relay/relay3")
+  {
+    if (messageMQTT.payload == "ON")
+    {
+      digitalWrite(RELAY3_PIN, LOW);
+    } else {
+      digitalWrite(RELAY3_PIN, HIGH);
+    }
+  }
+  // Рэле 4
+  if (messageMQTT.topic == "/countryhouse/relay/relay4")
+  {
+    if (messageMQTT.payload == "ON")
+    {
+      digitalWrite(RELAY4_PIN, LOW);
+    } else {
+      digitalWrite(RELAY4_PIN, HIGH);
+    }
+  }
+  // Рэле 5
+  if (messageMQTT.topic == "/countryhouse/relay/relay5")
+  {
+    if (messageMQTT.payload == "ON")
+    {
+      digitalWrite(RELAY5_PIN, LOW);
+    } else {
+      digitalWrite(RELAY5_PIN, HIGH);
+    }
+  }
+  
   #ifdef DEBUG
-    // Serial.println(F("########################################################"));
-    // Serial.print(F("Current topic = "));
-    // Serial.println(messageMQTT.topic);
-    // Serial.print(F("Current payload = "));
-    // Serial.println(messageMQTT.payload);
-    // Serial.println(F("########################################################"));
+    Serial.println(F("########################################################"));
+    Serial.print(F("Current topic = "));
+    Serial.println(messageMQTT.topic);
+    Serial.print(F("Current payload = "));
+    Serial.println(messageMQTT.payload);
+    Serial.println(F("########################################################"));
   #endif
 
 }
@@ -766,6 +966,11 @@ boolean reconnect(void) {
     }
     client.subscribe("/countryhouse/heating/Auto");
     client.subscribe("/countryhouse/heating/State");
+    client.subscribe("/countryhouse/relay/relay1");
+    client.subscribe("/countryhouse/relay/relay2");
+    client.subscribe("/countryhouse/relay/relay3");
+    client.subscribe("/countryhouse/relay/relay4");
+    client.subscribe("/countryhouse/relay/relay5");
     #ifdef DEBUG
       Serial.println(F("Connected to: /countryhouse/heating/State"));
     #endif
